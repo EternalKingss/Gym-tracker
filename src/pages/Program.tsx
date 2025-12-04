@@ -1,12 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { GlassCard } from '../components';
 import { WORKOUT_PROGRAM, WARM_UP_PROTOCOL, WorkoutExercise } from '../data/workoutProgram';
+import { useAuth } from '../contexts/AuthContext';
+
+interface WorkoutProgression {
+  currentWeek: number;
+  completedDays: number[];
+}
 
 const Program: React.FC = () => {
+  const { user } = useAuth();
+  const [progression, setProgression] = useState<WorkoutProgression>({
+    currentWeek: 1,
+    completedDays: [],
+  });
   const [selectedWeek, setSelectedWeek] = useState(1);
   const [selectedDay, setSelectedDay] = useState(0);
   const [expandedExercise, setExpandedExercise] = useState<number | null>(null);
+
+  // Load progression from localStorage
+  useEffect(() => {
+    if (!user) return;
+    const key = `progression_${user.id}`;
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      const loadedProgression = JSON.parse(saved);
+      setProgression(loadedProgression);
+      setSelectedWeek(loadedProgression.currentWeek);
+    }
+  }, [user]);
+
+  // Check if a week is unlocked (can be viewed)
+  const isWeekUnlocked = (weekNumber: number): boolean => {
+    return weekNumber <= progression.currentWeek;
+  };
 
   const currentWeek = WORKOUT_PROGRAM.find(w => w.week === selectedWeek);
   const currentWorkout = currentWeek?.days[selectedDay];
@@ -44,7 +72,9 @@ const Program: React.FC = () => {
         <motion.div initial="hidden" animate="visible" variants={cardVariants}>
           <h1 className="text-white text-4xl font-bold mb-2">Jeff Nippard's Program</h1>
           <p className="text-white/60">Bodybuilding Transformation System - Beginner</p>
-          <p className="text-orange-400 text-sm mt-2">Foundation Block • Week {selectedWeek}</p>
+          <p className="text-orange-400 text-sm mt-2">
+            {currentWeek?.block || 'Foundation Block'} • Week {selectedWeek}
+          </p>
         </motion.div>
 
         {/* Warm-Up Protocol */}
@@ -84,24 +114,43 @@ const Program: React.FC = () => {
         <motion.div initial="hidden" animate="visible" variants={cardVariants} transition={{ delay: 0.2 }}>
           <GlassCard>
             <h3 className="text-white text-lg font-semibold mb-3">Select Week</h3>
+            <p className="text-white/60 text-sm mb-4">
+              You are on <span className="text-orange-400 font-semibold">Week {progression.currentWeek}</span>. Complete all 5 days to unlock the next week.
+            </p>
             <div className="flex flex-wrap gap-3">
-              {WORKOUT_PROGRAM.map((week) => (
-                <button
-                  key={week.week}
-                  onClick={() => setSelectedWeek(week.week)}
-                  disabled={week.days.length === 0}
-                  className={`px-6 py-3 rounded-xl font-semibold transition-all ${
-                    selectedWeek === week.week
-                      ? 'bg-orange-500 text-white'
-                      : week.days.length === 0
-                      ? 'bg-white/5 text-white/30 cursor-not-allowed'
-                      : 'bg-white/10 text-white/60 hover:bg-white/20 hover:text-white'
-                  }`}
-                >
-                  Week {week.week}
-                  {week.days.length === 0 && <span className="text-xs block">Coming Soon</span>}
-                </button>
-              ))}
+              {WORKOUT_PROGRAM.map((week) => {
+                const isUnlocked = isWeekUnlocked(week.week);
+                const isCurrent = week.week === progression.currentWeek;
+                const isEmpty = week.days.length === 0;
+                const isLocked = !isUnlocked || isEmpty;
+
+                return (
+                  <button
+                    key={week.week}
+                    onClick={() => isUnlocked && !isEmpty && setSelectedWeek(week.week)}
+                    disabled={isLocked}
+                    className={`px-6 py-3 rounded-xl font-semibold transition-all relative ${
+                      selectedWeek === week.week
+                        ? 'bg-orange-500 text-white'
+                        : isLocked
+                        ? 'bg-white/5 text-white/30 cursor-not-allowed'
+                        : 'bg-white/10 text-white/60 hover:bg-white/20 hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      {!isUnlocked && !isEmpty && (
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                      <span>Week {week.week}</span>
+                      {isCurrent && <span className="ml-1 text-xs">(Current)</span>}
+                    </div>
+                    {isEmpty && <span className="text-xs block">Coming Soon</span>}
+                    {!isUnlocked && !isEmpty && <span className="text-xs block">Locked</span>}
+                  </button>
+                );
+              })}
             </div>
           </GlassCard>
         </motion.div>
@@ -111,21 +160,30 @@ const Program: React.FC = () => {
           <GlassCard>
             <h3 className="text-white text-lg font-semibold mb-3">Select Workout Day</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {currentWeek?.days.map((day, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setSelectedDay(idx)}
-                  className={`p-4 rounded-xl font-semibold transition-all ${
-                    selectedDay === idx
-                      ? 'bg-orange-500/30 border-2 border-orange-400 text-white'
-                      : 'bg-white/5 border-2 border-white/10 text-white/70 hover:border-white/30 hover:text-white'
-                  }`}
-                >
-                  <div className="text-xs text-white/60 mb-1">Day {idx + 1}</div>
-                  <div>{day.name}</div>
-                  <div className="text-xs text-white/60 mt-1">{day.exercises.length} exercises</div>
-                </button>
-              ))}
+              {currentWeek?.days.map((day, idx) => {
+                const isCompleted = selectedWeek === progression.currentWeek && progression.completedDays.includes(idx);
+
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedDay(idx)}
+                    className={`p-4 rounded-xl font-semibold transition-all relative ${
+                      selectedDay === idx
+                        ? 'bg-orange-500/30 border-2 border-orange-400 text-white'
+                        : isCompleted
+                        ? 'bg-green-500/10 border-2 border-green-400/50 text-white/90'
+                        : 'bg-white/5 border-2 border-white/10 text-white/70 hover:border-white/30 hover:text-white'
+                    }`}
+                  >
+                    {isCompleted && (
+                      <div className="absolute top-2 right-2 text-green-400 text-xl">✓</div>
+                    )}
+                    <div className="text-xs text-white/60 mb-1">Day {idx + 1}</div>
+                    <div>{day.name}</div>
+                    <div className="text-xs text-white/60 mt-1">{day.exercises.length} exercises</div>
+                  </button>
+                );
+              })}
             </div>
           </GlassCard>
         </motion.div>

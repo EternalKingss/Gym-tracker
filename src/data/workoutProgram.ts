@@ -1,0 +1,322 @@
+// Jeff Nippard's Bodybuilding Transformation System - Beginner
+// Foundation Block (Weeks 1-4)
+
+export interface WorkoutExercise {
+  name: string;
+  warmupSets: string;
+  workingSets: number;
+  reps: string;
+  lastSetRPE: string;
+  earlySetRPE?: string;
+  rest: string;
+  notes?: string;
+  substitution1?: string;
+  substitution2?: string;
+  intensityTechnique?: string;
+}
+
+export interface WorkoutDay {
+  name: string;
+  exercises: WorkoutExercise[];
+}
+
+export interface WeekPlan {
+  week: number;
+  block: string;
+  days: WorkoutDay[];
+}
+
+export const WORKOUT_PROGRAM: WeekPlan[] = [
+  {
+    week: 1,
+    block: "Foundation Block",
+    days: [
+      {
+        name: "Upper (Strength Focus)",
+        exercises: [
+          {
+            name: "45° Incline Barbell Press",
+            warmupSets: "2-3",
+            workingSets: 1,
+            reps: "6-8",
+            lastSetRPE: "~6",
+            rest: "3-5 min",
+            notes: "1 second pause at the bottom of each rep while maintaining tension on the pecs",
+            substitution1: "45° Incline DB Press",
+            substitution2: "45° Incline Machine Press",
+          },
+          {
+            name: "Cable Crossover Ladder",
+            warmupSets: "1-2",
+            workingSets: 1,
+            reps: "8-10",
+            lastSetRPE: "~7",
+            rest: "1-2 min",
+            notes: "Do one set with low cable position, one set with medium-height cable position, and one height with a high cable position",
+            substitution1: "Pec Deck",
+            substitution2: "Bottom-Half DB Flye",
+          },
+          {
+            name: "Wide-Grip Pull-Up",
+            warmupSets: "1-2",
+            workingSets: 1,
+            reps: "8-10",
+            lastSetRPE: "~6",
+            rest: "2-3 min",
+            notes: "1.5x shoulder width overhand grip. Slow 2-3 second negative. Feel your lats pulling apart on the way down",
+            substitution1: "Wide-Grip Lat Pulldown",
+            substitution2: "Dual-Handle Lat Pulldown",
+          },
+          {
+            name: "High-Cable Lateral Raise",
+            warmupSets: "1-2",
+            workingSets: 1,
+            reps: "8-10",
+            lastSetRPE: "~6",
+            rest: "1-2 min",
+            notes: "Focus on squeezing your lateral delt to move the weight",
+            substitution1: "High-Cable Cuffed Lateral Raise",
+            substitution2: "Lean-In DB Lateral Raise",
+          },
+          {
+            name: "Pendlay Deficit Row",
+            warmupSets: "1-2",
+            workingSets: 1,
+            reps: "6-8",
+            lastSetRPE: "~6",
+            rest: "2-3 min",
+            notes: "Stand on a bumper plate. Focus on getting a big stretch and touch your stomach/chest on each rep!",
+            substitution1: "Smith Machine Row",
+            substitution2: "Single-Arm DB Row",
+          },
+          {
+            name: "Overhead Cable Triceps Extension (Bar)",
+            warmupSets: "1",
+            workingSets: 1,
+            reps: "8-10",
+            lastSetRPE: "~7",
+            rest: "1-2 min",
+            notes: "Optionally pause for 0.5-1 second in the stretched aspect of each rep",
+            substitution1: "Overhead Cable Triceps Extension (Rope)",
+            substitution2: "DB Skull Crusher",
+          },
+          {
+            name: "Bayesian Cable Curl",
+            warmupSets: "1",
+            workingSets: 1,
+            reps: "8-10",
+            lastSetRPE: "~7",
+            rest: "1-2 min",
+            notes: "If you have a left-right bicep size imbalance, do these 1 arm at a time, starting with the weaker arm",
+            substitution1: "Seated Super-Bayesian High Cable Curl",
+            substitution2: "Incline DB Stretch Curl",
+          },
+        ],
+      },
+      {
+        name: "Lower (Strength Focus)",
+        exercises: [
+          {
+            name: "Lying Leg Curl",
+            warmupSets: "2",
+            workingSets: 1,
+            reps: "8-10",
+            lastSetRPE: "~7",
+            rest: "1-2 min",
+            notes: "Set the machine so that you get the biggest stretch possible at the bottom. Prevent your butt from popping up as you curl",
+            substitution1: "Seated Leg Curl",
+            substitution2: "Nordic Ham Curl",
+          },
+          {
+            name: "Smith Machine Squat",
+            warmupSets: "2-4",
+            workingSets: 1,
+            reps: "6-8",
+            lastSetRPE: "~6",
+            rest: "3-5 min",
+            notes: "Set up your feet forward ~3-6 inches. This will cause you to lean back into the bar slightly, allowing for a more upright squat",
+            substitution1: "DB Bulgarian Split Squat",
+            substitution2: "High-Bar Back Squat",
+          },
+          {
+            name: "Barbell RDL",
+            warmupSets: "2-4",
+            workingSets: 1,
+            reps: "6-8",
+            lastSetRPE: "~6",
+            rest: "2-3 min",
+            notes: "To keep tension on the hamstrings, stop about 75% of the way to full lockout on each rep",
+            substitution1: "DB RDL",
+            substitution2: "Snatch-Grip RDL",
+          },
+          {
+            name: "Leg Extension",
+            warmupSets: "1-2",
+            workingSets: 1,
+            reps: "8-10",
+            lastSetRPE: "~7",
+            rest: "1-2 min",
+            notes: "Set the seat back as far as it will go. Use a 2-3 second negative. Feel your quads pulling apart on the negative",
+            substitution1: "Reverse Nordic",
+            substitution2: "Sissy Squat",
+          },
+          {
+            name: "Standing Calf Raise",
+            warmupSets: "1-2",
+            workingSets: 1,
+            reps: "8-10",
+            lastSetRPE: "~7",
+            rest: "1-2 min",
+            notes: "1-2 second pause at the bottom of each rep. Roll your ankle back and forth on the balls of your feet",
+            substitution1: "Seated Calf Raise",
+            substitution2: "Leg Press Calf Press",
+          },
+          {
+            name: "Cable Crunch",
+            warmupSets: "1",
+            workingSets: 1,
+            reps: "8-10",
+            lastSetRPE: "~7",
+            rest: "1-2 min",
+            notes: "Round your lower back as you crunch. Maintain a mind-muscle connection with your 6-pack",
+            substitution1: "Decline Weighted Crunch",
+            substitution2: "Machine Crunch",
+          },
+        ],
+      },
+      {
+        name: "Pull (Hypertrophy Focus)",
+        exercises: [
+          {
+            name: "Neutral-Grip Lat Pulldown",
+            warmupSets: "2-3",
+            workingSets: 1,
+            reps: "8-10",
+            lastSetRPE: "~6",
+            rest: "2-3 min",
+            notes: "Do these pulldowns with the handle more out in front of you, more like a cross between pullover and a pulldown",
+            substitution1: "Wide-Grip Lat Pulldown",
+            substitution2: "Neutral-Grip Pull-Up",
+          },
+          {
+            name: "Chest-Supported Machine Row",
+            warmupSets: "2-3",
+            workingSets: 1,
+            reps: "8-10",
+            lastSetRPE: "~6",
+            rest: "2-3 min",
+            notes: "Flare elbows out at roughly 45° and squeeze your shoulder blades together hard at the top of each rep",
+            substitution1: "Chest-Supported T-Bar Row",
+            substitution2: "Incline Chest-Supported DB Row",
+          },
+          {
+            name: "1-Arm 45° Cable Rear Delt Flye",
+            warmupSets: "1-2",
+            workingSets: 1,
+            reps: "10-12",
+            lastSetRPE: "~7",
+            rest: "1-2 min",
+            notes: "Pause for 1-2 seconds in the squeeze of each rep. Contract the rear delts hard!",
+            substitution1: "Rope Face Pull",
+            substitution2: "Reverse Pec Deck",
+          },
+          {
+            name: "Machine Shrug",
+            warmupSets: "2-3",
+            workingSets: 1,
+            reps: "10-12",
+            lastSetRPE: "~7",
+            rest: "1-2 min",
+            substitution1: "Cable Paused Shrug-In",
+            substitution2: "DB Shrug",
+          },
+          {
+            name: "EZ-Bar Cable Curl",
+            warmupSets: "1",
+            workingSets: 1,
+            reps: "10-12",
+            lastSetRPE: "~7",
+            rest: "1-2 min",
+            notes: "Set up the cable at the lowest position. Maintain constant tension on the biceps. Slow, controlled reps!",
+            substitution1: "EZ-Bar Curl",
+            substitution2: "DB Curl",
+          },
+          {
+            name: "Machine Preacher Curl",
+            warmupSets: "1",
+            workingSets: 1,
+            reps: "12-15",
+            lastSetRPE: "~7",
+            rest: "1-2 min",
+            notes: "Focus on the squeeze at the top of each rep",
+            substitution1: "EZ-Bar Preacher Curl",
+            substitution2: "DB Preacher Curl",
+          },
+        ],
+      },
+    ],
+  },
+  // Week 2 - Intensity increases to RPE ~7-8
+  {
+    week: 2,
+    block: "Foundation Block",
+    days: [
+      {
+        name: "Upper (Strength Focus)",
+        exercises: [
+          { name: "45° Incline Barbell Press", warmupSets: "2-3", workingSets: 1, reps: "6-8", lastSetRPE: "~7", rest: "3-5 min", notes: "1 second pause at the bottom", substitution1: "45° Incline DB Press", substitution2: "45° Incline Machine Press" },
+          { name: "Cable Crossover Ladder", warmupSets: "1-2", workingSets: 1, reps: "8-10", lastSetRPE: "~8", rest: "1-2 min", substitution1: "Pec Deck", substitution2: "Bottom-Half DB Flye" },
+          { name: "Wide-Grip Pull-Up", warmupSets: "1-2", workingSets: 1, reps: "8-10", lastSetRPE: "~7", rest: "2-3 min", substitution1: "Wide-Grip Lat Pulldown", substitution2: "Dual-Handle Lat Pulldown" },
+          { name: "High-Cable Lateral Raise", warmupSets: "1-2", workingSets: 1, reps: "8-10", lastSetRPE: "~7", rest: "1-2 min", substitution1: "High-Cable Cuffed Lateral Raise", substitution2: "Lean-In DB Lateral Raise" },
+          { name: "Pendlay Deficit Row", warmupSets: "1-2", workingSets: 1, reps: "6-8", lastSetRPE: "~7", rest: "2-3 min", substitution1: "Smith Machine Row", substitution2: "Single-Arm DB Row" },
+          { name: "Overhead Cable Triceps Extension (Bar)", warmupSets: "1", workingSets: 1, reps: "8-10", lastSetRPE: "~8", rest: "1-2 min", substitution1: "Overhead Cable Triceps Extension (Rope)", substitution2: "DB Skull Crusher" },
+          { name: "Bayesian Cable Curl", warmupSets: "1", workingSets: 1, reps: "8-10", lastSetRPE: "~8", rest: "1-2 min", substitution1: "Seated Super-Bayesian High Cable Curl", substitution2: "Incline DB Stretch Curl" },
+        ],
+      },
+      {
+        name: "Lower (Strength Focus)",
+        exercises: [
+          { name: "Lying Leg Curl", warmupSets: "2", workingSets: 1, reps: "8-10", lastSetRPE: "~8", rest: "1-2 min", substitution1: "Seated Leg Curl", substitution2: "Nordic Ham Curl" },
+          { name: "Smith Machine Squat", warmupSets: "2-4", workingSets: 1, reps: "6-8", lastSetRPE: "~7", rest: "3-5 min", substitution1: "DB Bulgarian Split Squat", substitution2: "High-Bar Back Squat" },
+          { name: "Barbell RDL", warmupSets: "2-4", workingSets: 1, reps: "6-8", lastSetRPE: "~7", rest: "2-3 min", substitution1: "DB RDL", substitution2: "Snatch-Grip RDL" },
+          { name: "Leg Extension", warmupSets: "1-2", workingSets: 1, reps: "8-10", lastSetRPE: "~8", rest: "1-2 min", substitution1: "Reverse Nordic", substitution2: "Sissy Squat" },
+          { name: "Standing Calf Raise", warmupSets: "1-2", workingSets: 1, reps: "8-10", lastSetRPE: "~8", rest: "1-2 min", substitution1: "Seated Calf Raise", substitution2: "Leg Press Calf Press" },
+          { name: "Cable Crunch", warmupSets: "1", workingSets: 1, reps: "8-10", lastSetRPE: "~8", rest: "1-2 min", substitution1: "Decline Weighted Crunch", substitution2: "Machine Crunch" },
+        ],
+      },
+      {
+        name: "Pull (Hypertrophy Focus)",
+        exercises: [
+          { name: "Neutral-Grip Lat Pulldown", warmupSets: "2-3", workingSets: 1, reps: "8-10", lastSetRPE: "~7", rest: "2-3 min", substitution1: "Wide-Grip Lat Pulldown", substitution2: "Neutral-Grip Pull-Up" },
+          { name: "Chest-Supported Machine Row", warmupSets: "2-3", workingSets: 1, reps: "8-10", lastSetRPE: "~7", rest: "2-3 min", substitution1: "Chest-Supported T-Bar Row", substitution2: "Incline Chest-Supported DB Row" },
+          { name: "1-Arm 45° Cable Rear Delt Flye", warmupSets: "1-2", workingSets: 1, reps: "10-12", lastSetRPE: "~8", rest: "1-2 min", substitution1: "Rope Face Pull", substitution2: "Reverse Pec Deck" },
+          { name: "Machine Shrug", warmupSets: "2-3", workingSets: 1, reps: "10-12", lastSetRPE: "~8", rest: "1-2 min", substitution1: "Cable Paused Shrug-In", substitution2: "DB Shrug" },
+          { name: "EZ-Bar Cable Curl", warmupSets: "1", workingSets: 1, reps: "10-12", lastSetRPE: "~8", rest: "1-2 min", substitution1: "EZ-Bar Curl", substitution2: "DB Curl" },
+          { name: "Machine Preacher Curl", warmupSets: "1", workingSets: 1, reps: "12-15", lastSetRPE: "~8", rest: "1-2 min", substitution1: "EZ-Bar Preacher Curl", substitution2: "DB Preacher Curl" },
+        ],
+      },
+    ],
+  },
+  // Weeks 3-4 continue with progression (same exercises, higher RPE/sets)
+  { week: 3, block: "Foundation Block", days: [] }, // Placeholder - add full data later
+  { week: 4, block: "Foundation Block", days: [] },
+];
+
+export const WARM_UP_PROTOCOL = {
+  general: {
+    cardio: "5-10 minutes light cardio (treadmill, stairmaster, elliptical, bike, etc.)",
+    dynamicStretches: [
+      { name: "Arm Swings", reps: "10 reps per side" },
+      { name: "Arm Circles", reps: "10 reps per side" },
+      { name: "Front-to-Back Leg Swings", reps: "10 reps per side" },
+      { name: "Side-to-Side Leg Swings", reps: "10 reps per side" },
+      { name: "Cable External Rotation (optional)", reps: "15 reps per side" },
+    ],
+  },
+  exerciseSpecific: {
+    "1 Set": "Use ~60% of your planned working weight for ~6-10 reps",
+    "2 Sets": "Set 1: ~50% for 6-10 reps, Set 2: ~70% for 4-6 reps",
+    "3 Sets": "Set 1: ~45% for 6-10 reps, Set 2: ~65% for 4-6 reps, Set 3: ~85% for 3-4 reps",
+    "4 Sets": "Set 1: ~45% for 6-10 reps, Set 2: ~60% for 4-6 reps, Set 3: ~75% for 3-5 reps, Set 4: ~85% for 2-4 reps",
+  },
+};

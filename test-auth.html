@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Auth Storage</title>
+</head>
+<body>
+    <h1>Authentication Storage Test</h1>
+    <button onclick="checkStorage()">Check LocalStorage</button>
+    <button onclick="clearStorage()">Clear All Data</button>
+    <pre id="output"></pre>
+
+    <script>
+        function checkStorage() {
+            const users = localStorage.getItem('users');
+            const currentUser = localStorage.getItem('currentUser');
+
+            const output = document.getElementById('output');
+            output.textContent = 'Users in storage:\n' + (users || 'None') + '\n\n' +
+                                'Current user:\n' + (currentUser || 'None');
+        }
+
+        function clearStorage() {
+            localStorage.removeItem('users');
+            localStorage.removeItem('currentUser');
+            alert('Storage cleared!');
+            checkStorage();
+        }
+
+        // Auto-check on load
+        checkStorage();
+    </script>
+</body>
+</html>

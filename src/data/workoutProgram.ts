@@ -300,6 +300,18 @@ export const WORKOUT_PROGRAM: WeekPlan[] = [
   // Weeks 3-4 continue with progression (same exercises, higher RPE/sets)
   { week: 3, block: "Foundation Block", days: [] }, // Placeholder - add full data later
   { week: 4, block: "Foundation Block", days: [] },
+
+  // Building Block (Weeks 5-8)
+  { week: 5, block: "Building Block", days: [] },
+  { week: 6, block: "Building Block", days: [] },
+  { week: 7, block: "Building Block", days: [] },
+  { week: 8, block: "Building Block", days: [] },
+
+  // Peak Block (Weeks 9-12)
+  { week: 9, block: "Peak Block", days: [] },
+  { week: 10, block: "Peak Block", days: [] },
+  { week: 11, block: "Peak Block", days: [] },
+  { week: 12, block: "Peak Block", days: [] },
 ];
 
 export const WARM_UP_PROTOCOL = {

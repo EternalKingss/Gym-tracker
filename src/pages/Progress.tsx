@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { GlassCard } from '../components';
 import ProgressChart from '../components/ProgressChart';
+import { useAuth } from '../contexts/AuthContext';
 
 interface WorkoutHistory {
   date: string;
@@ -40,21 +41,23 @@ const TRACKED_EXERCISES = [
 ];
 
 const Progress: React.FC = () => {
+  const { user } = useAuth();
   const [workoutHistory, setWorkoutHistory] = useState<WorkoutHistory[]>([]);
   const [selectedExercise, setSelectedExercise] = useState('45° Incline Barbell Press');
 
   useEffect(() => {
-    // Load workout history from localStorage
-    const saved = localStorage.getItem('workoutHistory');
+    if (!user) return;
+
+    // Load user-specific workout history from localStorage
+    const key = `workoutHistory_${user.id}`;
+    const saved = localStorage.getItem(key);
     if (saved) {
       setWorkoutHistory(JSON.parse(saved));
     } else {
-      // Generate sample data for demonstration
-      const sampleData = generateSampleData();
-      setWorkoutHistory(sampleData);
-      localStorage.setItem('workoutHistory', JSON.stringify(sampleData));
+      // No workout history for this user yet
+      setWorkoutHistory([]);
     }
-  }, []);
+  }, [user]);
 
   const generateSampleData = (): WorkoutHistory[] => {
     // Return empty array - no sample data

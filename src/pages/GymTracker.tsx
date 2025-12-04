@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard, CircularProgress, Button } from '../components';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Exercise {
   id: string;
@@ -52,6 +53,7 @@ const EXERCISE_LIBRARY = [
 ];
 
 const GymTracker: React.FC = () => {
+  const { user } = useAuth();
   const [workoutSession, setWorkoutSession] = useState<WorkoutSession>({
     exercises: [],
     startTime: null,
@@ -59,7 +61,16 @@ const GymTracker: React.FC = () => {
   });
 
   const [showExerciseModal, setShowExerciseModal] = useState(false);
-  const [totalWorkouts] = useState(24);
+
+  // Get user-specific stats from localStorage
+  const getUserWorkoutHistory = () => {
+    if (!user) return [];
+    const key = `workoutHistory_${user.id}`;
+    const saved = localStorage.getItem(key);
+    return saved ? JSON.parse(saved) : [];
+  };
+
+  const [totalWorkouts] = useState(getUserWorkoutHistory().length);
   const [weeklyProgress] = useState(67);
 
   const startWorkout = () => {
@@ -71,6 +82,36 @@ const GymTracker: React.FC = () => {
   };
 
   const endWorkout = () => {
+    if (!user) return;
+
+    // Only save if there are completed exercises
+    const completedExercises = workoutSession.exercises.filter(ex => ex.completed);
+
+    if (completedExercises.length > 0) {
+      // Get existing workout history for this user
+      const key = `workoutHistory_${user.id}`;
+      const existingHistory = getUserWorkoutHistory();
+
+      // Create new workout entry
+      const newWorkout = {
+        date: new Date().toISOString(),
+        exercises: completedExercises.map(ex => ({
+          name: ex.name,
+          sets: ex.sets,
+          reps: ex.reps,
+          weight: ex.weight,
+        })),
+      };
+
+      // Add to history
+      const updatedHistory = [...existingHistory, newWorkout];
+      localStorage.setItem(key, JSON.stringify(updatedHistory));
+
+      console.log('Workout saved:', newWorkout);
+      console.log('Total workouts for user:', updatedHistory.length);
+    }
+
+    // Reset workout session
     setWorkoutSession({
       exercises: [],
       startTime: null,

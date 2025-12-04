@@ -1,165 +1,222 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard, CircularProgress, Button } from '../components';
 import { useAuth } from '../contexts/AuthContext';
+import { WORKOUT_PROGRAM } from '../data/workoutProgram';
 
-interface Exercise {
-  id: string;
-  name: string;
-  sets: number;
+interface ExerciseSet {
+  setNumber: number;
   reps: number;
   weight: number;
   completed: boolean;
 }
 
+interface WorkoutExercise {
+  id: string;
+  name: string;
+  workingSets: number;
+  targetReps: string;
+  targetRPE: string;
+  rest: string;
+  notes?: string;
+  sets: ExerciseSet[];
+  completed: boolean;
+}
+
+interface WorkoutProgression {
+  currentWeek: number;
+  completedDays: number[]; // Array of day indices (0-4) completed in current week
+}
+
 interface WorkoutSession {
-  exercises: Exercise[];
+  week: number;
+  day: number;
+  dayName: string;
+  exercises: WorkoutExercise[];
   startTime: Date | null;
   isActive: boolean;
 }
 
-// Jeff Nippard's Bodybuilding Transformation System - Beginner
-const EXERCISE_LIBRARY = [
-  // Upper (Strength Focus)
-  { name: '45° Incline Barbell Press', category: 'Chest' },
-  { name: 'Cable Crossover', category: 'Chest' },
-  { name: 'Wide-Grip Pull-Up', category: 'Back' },
-  { name: 'High-Cable Lateral Raise', category: 'Shoulders' },
-  { name: 'Pendlay Deficit Row', category: 'Back' },
-  { name: 'Overhead Cable Triceps Extension', category: 'Arms' },
-  { name: 'Bayesian Cable Curl', category: 'Arms' },
-
-  // Lower (Strength Focus)
-  { name: 'Lying Leg Curl', category: 'Legs' },
-  { name: 'Smith Machine Squat', category: 'Legs' },
-  { name: 'Barbell RDL', category: 'Legs' },
-  { name: 'Leg Extension', category: 'Legs' },
-  { name: 'Standing Calf Raise', category: 'Legs' },
-  { name: 'Cable Crunch', category: 'Abs' },
-
-  // Pull (Hypertrophy Focus)
-  { name: 'Neutral-Grip Lat Pulldown', category: 'Back' },
-  { name: 'Chest-Supported Machine Row', category: 'Back' },
-  { name: '1-Arm 45° Cable Rear Delt Flye', category: 'Shoulders' },
-  { name: 'Machine Shrug', category: 'Back' },
-  { name: 'EZ-Bar Cable Curl', category: 'Arms' },
-  { name: 'Machine Preacher Curl', category: 'Arms' },
-
-  // Common Alternatives
-  { name: 'Bench Press', category: 'Chest' },
-  { name: 'Squats', category: 'Legs' },
-  { name: 'Deadlifts', category: 'Back' },
-  { name: 'Overhead Press', category: 'Shoulders' },
-];
-
 const GymTracker: React.FC = () => {
   const { user } = useAuth();
+  const [progression, setProgression] = useState<WorkoutProgression>({
+    currentWeek: 1,
+    completedDays: [],
+  });
   const [workoutSession, setWorkoutSession] = useState<WorkoutSession>({
+    week: 1,
+    day: 0,
+    dayName: '',
     exercises: [],
     startTime: null,
     isActive: false,
   });
 
-  const [showExerciseModal, setShowExerciseModal] = useState(false);
-
-  // Get user-specific stats from localStorage
-  const getUserWorkoutHistory = () => {
-    if (!user) return [];
-    const key = `workoutHistory_${user.id}`;
+  // Load progression from localStorage
+  useEffect(() => {
+    if (!user) return;
+    const key = `progression_${user.id}`;
     const saved = localStorage.getItem(key);
-    return saved ? JSON.parse(saved) : [];
+    if (saved) {
+      setProgression(JSON.parse(saved));
+    }
+  }, [user]);
+
+  // Save progression to localStorage
+  const saveProgression = (newProgression: WorkoutProgression) => {
+    if (!user) return;
+    const key = `progression_${user.id}`;
+    localStorage.setItem(key, JSON.stringify(newProgression));
+    setProgression(newProgression);
   };
 
-  const [totalWorkouts] = useState(getUserWorkoutHistory().length);
-  const [weeklyProgress] = useState(67);
+  // Get next workout day
+  const getNextWorkoutDay = (): { week: number; day: number } => {
+    const { currentWeek, completedDays } = progression;
 
+    // Find next uncompleted day in current week (days 0-4)
+    for (let day = 0; day < 5; day++) {
+      if (!completedDays.includes(day)) {
+        return { week: currentWeek, day };
+      }
+    }
+
+    // If all days completed, move to next week
+    return { week: currentWeek + 1, day: 0 };
+  };
+
+  // Start workout with auto-populated exercises
   const startWorkout = () => {
+    const { week, day } = getNextWorkoutDay();
+
+    // Check if week exists in program
+    const weekData = WORKOUT_PROGRAM.find(w => w.week === week);
+    if (!weekData || !weekData.days[day]) {
+      alert('No more workouts available in the program!');
+      return;
+    }
+
+    const dayData = weekData.days[day];
+
+    // Convert program exercises to workout exercises
+    const exercises: WorkoutExercise[] = dayData.exercises.map((ex, idx) => ({
+      id: `${Date.now()}_${idx}`,
+      name: ex.name,
+      workingSets: ex.workingSets,
+      targetReps: ex.reps,
+      targetRPE: ex.lastSetRPE,
+      rest: ex.rest,
+      notes: ex.notes,
+      sets: Array.from({ length: ex.workingSets }, (_, i) => ({
+        setNumber: i + 1,
+        reps: 0,
+        weight: 0,
+        completed: false,
+      })),
+      completed: false,
+    }));
+
     setWorkoutSession({
-      exercises: [],
+      week,
+      day,
+      dayName: dayData.name,
+      exercises,
       startTime: new Date(),
       isActive: true,
     });
   };
 
+  // End workout and update progression
   const endWorkout = () => {
     if (!user) return;
 
-    // Only save if there are completed exercises
-    const completedExercises = workoutSession.exercises.filter(ex => ex.completed);
+    const { week, day, exercises } = workoutSession;
+    const completedExercises = exercises.filter(ex => ex.completed);
 
+    // Only save and update progression if exercises were completed
     if (completedExercises.length > 0) {
-      // Get existing workout history for this user
-      const key = `workoutHistory_${user.id}`;
-      const existingHistory = getUserWorkoutHistory();
+      // Save workout to history
+      const historyKey = `workoutHistory_${user.id}`;
+      const existingHistory = JSON.parse(localStorage.getItem(historyKey) || '[]');
 
-      // Create new workout entry
       const newWorkout = {
         date: new Date().toISOString(),
+        week,
+        day,
+        dayName: workoutSession.dayName,
         exercises: completedExercises.map(ex => ({
           name: ex.name,
-          sets: ex.sets,
-          reps: ex.reps,
-          weight: ex.weight,
+          sets: ex.sets.filter(s => s.completed).map(s => ({
+            reps: s.reps,
+            weight: s.weight,
+          })),
         })),
       };
 
-      // Add to history
       const updatedHistory = [...existingHistory, newWorkout];
-      localStorage.setItem(key, JSON.stringify(updatedHistory));
+      localStorage.setItem(historyKey, JSON.stringify(updatedHistory));
 
-      console.log('Workout saved:', newWorkout);
-      console.log('Total workouts for user:', updatedHistory.length);
+      // Update progression
+      let newProgression = { ...progression };
+
+      // Add current day to completed days if not already there
+      if (!newProgression.completedDays.includes(day)) {
+        newProgression.completedDays = [...newProgression.completedDays, day].sort();
+      }
+
+      // If all 5 days completed, move to next week
+      if (newProgression.completedDays.length === 5) {
+        newProgression.currentWeek += 1;
+        newProgression.completedDays = [];
+      }
+
+      saveProgression(newProgression);
     }
 
     // Reset workout session
     setWorkoutSession({
+      week: 1,
+      day: 0,
+      dayName: '',
       exercises: [],
       startTime: null,
       isActive: false,
     });
   };
 
-  const addExercise = (exerciseName: string) => {
-    const newExercise: Exercise = {
-      id: Date.now().toString(),
-      name: exerciseName,
-      sets: 3,
-      reps: 10,
-      weight: 0,
-      completed: false,
-    };
+  const toggleSetComplete = (exerciseId: string, setNumber: number) => {
     setWorkoutSession({
       ...workoutSession,
-      exercises: [...workoutSession.exercises, newExercise],
-    });
-    setShowExerciseModal(false);
-  };
-
-  const toggleExerciseComplete = (id: string) => {
-    setWorkoutSession({
-      ...workoutSession,
-      exercises: workoutSession.exercises.map(ex =>
-        ex.id === id ? { ...ex, completed: !ex.completed } : ex
-      ),
+      exercises: workoutSession.exercises.map(ex => {
+        if (ex.id === exerciseId) {
+          const updatedSets = ex.sets.map(set =>
+            set.setNumber === setNumber ? { ...set, completed: !set.completed } : set
+          );
+          const allSetsCompleted = updatedSets.every(s => s.completed);
+          return { ...ex, sets: updatedSets, completed: allSetsCompleted };
+        }
+        return ex;
+      }),
     });
   };
 
-  const updateExercise = (id: string, field: keyof Exercise, value: any) => {
+  const updateSet = (exerciseId: string, setNumber: number, field: 'reps' | 'weight', value: number) => {
     setWorkoutSession({
       ...workoutSession,
-      exercises: workoutSession.exercises.map(ex =>
-        ex.id === id ? { ...ex, [field]: value } : ex
-      ),
+      exercises: workoutSession.exercises.map(ex => {
+        if (ex.id === exerciseId) {
+          const updatedSets = ex.sets.map(set =>
+            set.setNumber === setNumber ? { ...set, [field]: value } : set
+          );
+          return { ...ex, sets: updatedSets };
+        }
+        return ex;
+      }),
     });
   };
 
-  const removeExercise = (id: string) => {
-    setWorkoutSession({
-      ...workoutSession,
-      exercises: workoutSession.exercises.filter(ex => ex.id !== id),
-    });
-  };
-
+  // Calculate weekly progress percentage
+  const weeklyProgress = (progression.completedDays.length / 5) * 100;
   const completedExercises = workoutSession.exercises.filter(ex => ex.completed).length;
   const totalExercises = workoutSession.exercises.length;
 
@@ -212,21 +269,15 @@ const GymTracker: React.FC = () => {
       >
         {/* Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          {/* Total Workouts */}
+          {/* Current Week */}
           <motion.div variants={cardVariants}>
             <GlassCard className="h-full">
               <div className="text-center space-y-2">
-                <h3 className="text-white/60 text-sm">Total Workouts</h3>
-                <div className="flex items-center justify-center">
-                  <CircularProgress
-                    percentage={weeklyProgress}
-                    size="sm"
-                    color="orange"
-                    showPercentage={false}
-                  />
-                </div>
-                <p className="text-white text-3xl font-bold">{totalWorkouts}</p>
-                <p className="text-white/50 text-xs">This month</p>
+                <h3 className="text-white/60 text-sm">Current Week</h3>
+                <p className="text-white text-3xl font-bold">Week {progression.currentWeek}</p>
+                <p className="text-white/50 text-xs">
+                  {WORKOUT_PROGRAM.find(w => w.week === progression.currentWeek)?.block || 'Loading...'}
+                </p>
               </div>
             </GlassCard>
           </motion.div>
@@ -244,7 +295,9 @@ const GymTracker: React.FC = () => {
                     showPercentage={true}
                   />
                 </div>
-                <p className="text-white/50 text-xs">Keep it up!</p>
+                <p className="text-white/50 text-xs">
+                  {progression.completedDays.length}/5 days completed
+                </p>
               </div>
             </GlassCard>
           </motion.div>
@@ -271,192 +324,166 @@ const GymTracker: React.FC = () => {
           </motion.div>
         </div>
 
+        {/* Day Progress Tracker */}
+        {!workoutSession.isActive && (
+          <motion.div variants={cardVariants} className="mb-6">
+            <GlassCard>
+              <h3 className="text-white text-lg font-bold mb-4">This Week's Progress</h3>
+              <div className="grid grid-cols-5 gap-3">
+                {['Upper', 'Lower', 'Pull', 'Push', 'Legs'].map((dayName, idx) => (
+                  <div
+                    key={idx}
+                    className={`p-4 rounded-xl border-2 text-center transition-all ${
+                      progression.completedDays.includes(idx)
+                        ? 'bg-green-500/20 border-green-400 text-green-300'
+                        : 'bg-white/5 border-white/20 text-white/60'
+                    }`}
+                  >
+                    <p className="text-sm font-semibold">{dayName}</p>
+                    <p className="text-xs mt-1">Day {idx + 1}</p>
+                    {progression.completedDays.includes(idx) && (
+                      <p className="text-2xl mt-2">✓</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </GlassCard>
+          </motion.div>
+        )}
+
         {/* Main Workout Area */}
         <motion.div variants={cardVariants}>
           <GlassCard>
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-white text-2xl font-bold">
-                  {workoutSession.isActive ? 'Active Workout' : 'Start Your Workout'}
-                </h2>
+                <div>
+                  <h2 className="text-white text-2xl font-bold">
+                    {workoutSession.isActive ? workoutSession.dayName : 'Start Your Workout'}
+                  </h2>
+                  {workoutSession.isActive && (
+                    <p className="text-white/60 text-sm mt-1">
+                      Week {workoutSession.week} - Day {workoutSession.day + 1}
+                    </p>
+                  )}
+                </div>
                 {workoutSession.isActive ? (
-                  <Button
-                    variant="secondary"
-                    onClick={endWorkout}
-                  >
+                  <Button variant="secondary" onClick={endWorkout}>
                     End Workout
                   </Button>
                 ) : (
-                  <Button
-                    variant="primary"
-                    onClick={startWorkout}
-                  >
+                  <Button variant="primary" onClick={startWorkout}>
                     Start Workout
                   </Button>
                 )}
               </div>
 
               {workoutSession.isActive && (
-                <>
-                  {/* Add Exercise Button */}
-                  <button
-                    onClick={() => setShowExerciseModal(true)}
-                    className="w-full py-4 border-2 border-dashed border-white/20 rounded-2xl hover:border-orange-400/50 hover:bg-white/5 transition-all text-white/60 hover:text-white"
-                  >
-                    + Add Exercise
-                  </button>
-
-                  {/* Exercise List */}
-                  <AnimatePresence>
-                    {workoutSession.exercises.map((exercise) => (
-                      <motion.div
-                        key={exercise.id}
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="bg-white/5 rounded-2xl p-4 space-y-3"
-                      >
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-white text-lg font-semibold">
-                            {exercise.name}
-                          </h3>
-                          <button
-                            onClick={() => removeExercise(exercise.id)}
-                            className="text-red-400 hover:text-red-300 text-sm"
-                          >
-                            Remove
-                          </button>
+                <div className="space-y-4">
+                  {workoutSession.exercises.map((exercise) => (
+                    <motion.div
+                      key={exercise.id}
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className={`rounded-2xl p-4 border-2 transition-all ${
+                        exercise.completed
+                          ? 'bg-green-500/10 border-green-400/50'
+                          : 'bg-white/5 border-white/10'
+                      }`}
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h3 className="text-white text-lg font-semibold">{exercise.name}</h3>
+                            <div className="flex flex-wrap gap-3 mt-2 text-sm">
+                              <span className="text-white/60">
+                                {exercise.workingSets} sets × {exercise.targetReps} reps
+                              </span>
+                              <span className="text-orange-400">RPE {exercise.targetRPE}</span>
+                              <span className="text-white/50">Rest: {exercise.rest}</span>
+                            </div>
+                            {exercise.notes && (
+                              <p className="text-white/50 text-xs mt-2 italic">{exercise.notes}</p>
+                            )}
+                          </div>
+                          {exercise.completed && (
+                            <span className="text-green-400 text-2xl">✓</span>
+                          )}
                         </div>
 
-                        <div className="grid grid-cols-3 gap-3">
-                          {/* Sets */}
-                          <div>
-                            <label className="text-white/50 text-xs block mb-1">
-                              Sets
-                            </label>
-                            <input
-                              type="number"
-                              value={exercise.sets}
-                              onChange={(e) =>
-                                updateExercise(exercise.id, 'sets', parseInt(e.target.value))
-                              }
-                              className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-center focus:outline-none focus:border-orange-400"
-                            />
-                          </div>
-
-                          {/* Reps */}
-                          <div>
-                            <label className="text-white/50 text-xs block mb-1">
-                              Reps
-                            </label>
-                            <input
-                              type="number"
-                              value={exercise.reps}
-                              onChange={(e) =>
-                                updateExercise(exercise.id, 'reps', parseInt(e.target.value))
-                              }
-                              className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-center focus:outline-none focus:border-orange-400"
-                            />
-                          </div>
-
-                          {/* Weight */}
-                          <div>
-                            <label className="text-white/50 text-xs block mb-1">
-                              Weight (lbs)
-                            </label>
-                            <input
-                              type="number"
-                              value={exercise.weight}
-                              onChange={(e) =>
-                                updateExercise(exercise.id, 'weight', parseInt(e.target.value))
-                              }
-                              className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white text-center focus:outline-none focus:border-orange-400"
-                            />
-                          </div>
+                        {/* Sets */}
+                        <div className="space-y-2">
+                          {exercise.sets.map((set) => (
+                            <div
+                              key={set.setNumber}
+                              className={`grid grid-cols-4 gap-3 items-center p-3 rounded-xl ${
+                                set.completed
+                                  ? 'bg-green-500/20 border border-green-400/50'
+                                  : 'bg-white/5 border border-white/10'
+                              }`}
+                            >
+                              <div className="text-white/60 text-sm font-semibold">
+                                Set {set.setNumber}
+                              </div>
+                              <div>
+                                <input
+                                  type="number"
+                                  placeholder="Reps"
+                                  value={set.reps || ''}
+                                  onChange={(e) =>
+                                    updateSet(exercise.id, set.setNumber, 'reps', parseInt(e.target.value) || 0)
+                                  }
+                                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-center focus:outline-none focus:border-orange-400"
+                                />
+                              </div>
+                              <div>
+                                <input
+                                  type="number"
+                                  placeholder="Weight"
+                                  value={set.weight || ''}
+                                  onChange={(e) =>
+                                    updateSet(exercise.id, set.setNumber, 'weight', parseInt(e.target.value) || 0)
+                                  }
+                                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-center focus:outline-none focus:border-orange-400"
+                                />
+                              </div>
+                              <button
+                                onClick={() => toggleSetComplete(exercise.id, set.setNumber)}
+                                className={`py-2 rounded-lg font-semibold text-sm transition-all ${
+                                  set.completed
+                                    ? 'bg-green-500/30 text-green-300'
+                                    : 'bg-orange-500/20 text-orange-300 hover:bg-orange-500/30'
+                                }`}
+                              >
+                                {set.completed ? '✓' : 'Done'}
+                              </button>
+                            </div>
+                          ))}
                         </div>
-
-                        <button
-                          onClick={() => toggleExerciseComplete(exercise.id)}
-                          className={`w-full py-3 rounded-xl font-semibold transition-all ${
-                            exercise.completed
-                              ? 'bg-green-500/30 border-2 border-green-400 text-green-300'
-                              : 'bg-white/10 border-2 border-white/20 text-white hover:border-orange-400'
-                          }`}
-                        >
-                          {exercise.completed ? '✓ Completed' : 'Mark Complete'}
-                        </button>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-
-                  {workoutSession.exercises.length === 0 && (
-                    <div className="text-center py-12 text-white/40">
-                      <p>No exercises added yet</p>
-                      <p className="text-sm mt-2">Click "Add Exercise" to get started</p>
-                    </div>
-                  )}
-                </>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
               )}
 
               {!workoutSession.isActive && (
                 <div className="text-center py-12 space-y-4">
                   <div className="text-6xl">💪</div>
-                  <p className="text-white/60">Ready to crush your goals?</p>
-                  <p className="text-white/40 text-sm">Click "Start Workout" to begin tracking</p>
+                  <p className="text-white text-xl font-semibold">
+                    {progression.completedDays.length === 5
+                      ? `Ready for Week ${progression.currentWeek + 1}?`
+                      : `Next: ${
+                          WORKOUT_PROGRAM.find(w => w.week === progression.currentWeek)?.days[
+                            getNextWorkoutDay().day
+                          ]?.name || 'Loading...'
+                        }`}
+                  </p>
+                  <p className="text-white/60">Click "Start Workout" to begin</p>
                 </div>
               )}
             </div>
           </GlassCard>
         </motion.div>
       </motion.div>
-
-      {/* Exercise Selection Modal */}
-      <AnimatePresence>
-        {showExerciseModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-6"
-            onClick={() => setShowExerciseModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-2xl"
-            >
-              <GlassCard>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-white text-xl font-bold">Select Exercise</h3>
-                    <button
-                      onClick={() => setShowExerciseModal(false)}
-                      className="text-white/60 hover:text-white text-2xl"
-                    >
-                      ×
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto">
-                    {EXERCISE_LIBRARY.map((exercise) => (
-                      <button
-                        key={exercise.name}
-                        onClick={() => addExercise(exercise.name)}
-                        className="bg-white/5 hover:bg-orange-500/20 border border-white/10 hover:border-orange-400 rounded-xl p-4 text-left transition-all"
-                      >
-                        <p className="text-white font-semibold">{exercise.name}</p>
-                        <p className="text-white/50 text-sm">{exercise.category}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </GlassCard>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };

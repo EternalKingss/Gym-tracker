@@ -12,6 +12,10 @@ function AppContent() {
   const [currentPage, setCurrentPage] = useState<'workout' | 'progress' | 'program' | 'settings'>('program');
   const [showUserMenu, setShowUserMenu] = useState(false);
 
+  // Check for password recovery token in URL
+  const hashParams = new URLSearchParams(window.location.hash.substring(1));
+  const isPasswordRecovery = hashParams.get('type') === 'recovery';
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-black to-gray-900">
@@ -20,7 +24,8 @@ function AppContent() {
     );
   }
 
-  if (!user) {
+  // Show Auth page for password recovery even if user is logged in
+  if (!user || isPasswordRecovery) {
     return <Auth />;
   }
 

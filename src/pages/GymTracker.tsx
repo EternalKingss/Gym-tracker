@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard, CircularProgress, Button } from '../components';
 import { useAuth } from '../contexts/AuthContext';
 import { WORKOUT_PROGRAM } from '../data/workoutProgram';
-import { secureStorage } from '../utils/secureStorage';
+import { workoutService } from '../services/workoutService';
 
 interface ExerciseSet {
   setNumber: number;
@@ -53,21 +53,24 @@ const GymTracker: React.FC = () => {
     isActive: false,
   });
 
-  // Load progression from secure storage
+  // Load progression from backend/storage
   useEffect(() => {
     if (!user) return;
-    const key = `progression_${user.id}`;
-    const saved = secureStorage.getItem<WorkoutProgression>(key);
-    if (saved) {
-      setProgression(saved);
-    }
+
+    const loadProgression = async () => {
+      const saved = await workoutService.getProgression(user.id);
+      if (saved) {
+        setProgression(saved);
+      }
+    };
+
+    loadProgression();
   }, [user]);
 
-  // Save progression to secure storage
-  const saveProgression = (newProgression: WorkoutProgression) => {
+  // Save progression to backend/storage
+  const saveProgression = async (newProgression: WorkoutProgression) => {
     if (!user) return;
-    const key = `progression_${user.id}`;
-    secureStorage.setItem(key, newProgression);
+    await workoutService.updateProgression(user.id, newProgression);
     setProgression(newProgression);
   };
 
@@ -128,34 +131,38 @@ const GymTracker: React.FC = () => {
   };
 
   // End workout and update progression
-  const endWorkout = () => {
+  const endWorkout = async () => {
     if (!user) return;
 
-    const { week, day, exercises } = workoutSession;
+    const { week, day, exercises, startTime } = workoutSession;
     const completedExercises = exercises.filter(ex => ex.completed);
 
     // Only save and update progression if exercises were completed
-    if (completedExercises.length > 0) {
-      // Save workout to history using secure storage
-      const historyKey = `workoutHistory_${user.id}`;
-      const existingHistory = secureStorage.getItem<any[]>(historyKey) || [];
+    if (completedExercises.length > 0 && startTime) {
+      // Save workout session to backend/storage
+      const exercisesData = completedExercises.map(ex => {
+        const completedSets = ex.sets.filter(s => s.completed);
+        // Calculate average weight and reps
+        const avgWeight = completedSets.reduce((sum, s) => sum + s.weight, 0) / completedSets.length;
+        const avgReps = Math.round(completedSets.reduce((sum, s) => sum + s.reps, 0) / completedSets.length);
 
-      const newWorkout = {
-        date: new Date().toISOString(),
+        return {
+          name: ex.name,
+          sets: completedSets.length,
+          reps: avgReps,
+          weight: Math.round(avgWeight),
+        };
+      });
+
+      await workoutService.saveWorkoutSession(
+        user.id,
         week,
         day,
-        dayName: workoutSession.dayName,
-        exercises: completedExercises.map(ex => ({
-          name: ex.name,
-          sets: ex.sets.filter(s => s.completed).map(s => ({
-            reps: s.reps,
-            weight: s.weight,
-          })),
-        })),
-      };
-
-      const updatedHistory = [...existingHistory, newWorkout];
-      secureStorage.setItem(historyKey, updatedHistory);
+        workoutSession.dayName,
+        exercisesData,
+        startTime,
+        new Date()
+      );
 
       // Update progression
       let newProgression = { ...progression };
@@ -171,7 +178,7 @@ const GymTracker: React.FC = () => {
         newProgression.completedDays = [];
       }
 
-      saveProgression(newProgression);
+      await saveProgression(newProgression);
     }
 
     // Reset workout session
@@ -243,21 +250,27 @@ const GymTracker: React.FC = () => {
     <div
       className="min-h-screen relative overflow-hidden"
       style={{
-        background: 'linear-gradient(to bottom right, #4a5568 0%, #2d3748 30%, #1a202c 70%, #000000 100%)',
+        background: 'linear-gradient(135deg, #1a1410 0%, #2d1f0d 25%, #1f1610 50%, #0f0a05 100%)',
       }}
     >
-      {/* Background glows */}
+      {/* Background glows - Golden/Amber theme */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div
-          className="absolute -bottom-20 -left-20 w-96 h-96 rounded-full opacity-40"
+          className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full opacity-30 blur-3xl"
           style={{
-            background: 'radial-gradient(circle, rgba(251, 146, 60, 0.4) 0%, rgba(251, 146, 60, 0) 70%)',
+            background: 'radial-gradient(circle, rgba(255, 200, 87, 0.25) 0%, rgba(255, 179, 71, 0.1) 40%, transparent 70%)',
           }}
         />
         <div
-          className="absolute top-1/3 right-0 w-[500px] h-[500px] rounded-full opacity-20"
+          className="absolute bottom-0 right-1/4 w-[800px] h-[800px] rounded-full opacity-20 blur-3xl"
           style={{
-            background: 'radial-gradient(circle, rgba(251, 146, 60, 0.3) 0%, rgba(251, 146, 60, 0) 70%)',
+            background: 'radial-gradient(circle, rgba(251, 146, 60, 0.3) 0%, rgba(249, 115, 22, 0.15) 40%, transparent 70%)',
+          }}
+        />
+        <div
+          className="absolute top-1/2 left-0 w-[500px] h-[500px] rounded-full opacity-15 blur-3xl"
+          style={{
+            background: 'radial-gradient(circle, rgba(217, 119, 6, 0.2) 0%, transparent 70%)',
           }}
         />
       </div>
@@ -311,7 +324,7 @@ const GymTracker: React.FC = () => {
                 <div className="py-4">
                   {workoutSession.isActive ? (
                     <div className="space-y-2">
-                      <p className="text-orange-400 text-2xl font-bold">
+                      <p className="text-amber-400 text-2xl font-bold">
                         {completedExercises}/{totalExercises}
                       </p>
                       <p className="text-white/50 text-xs">Exercises done</p>
@@ -399,7 +412,7 @@ const GymTracker: React.FC = () => {
                               <span className="text-white/60">
                                 {exercise.workingSets} sets × {exercise.targetReps} reps
                               </span>
-                              <span className="text-orange-400">RPE {exercise.targetRPE}</span>
+                              <span className="text-amber-400 font-semibold">RPE {exercise.targetRPE}</span>
                               <span className="text-white/50">Rest: {exercise.rest}</span>
                             </div>
                             {exercise.notes && (
@@ -433,7 +446,7 @@ const GymTracker: React.FC = () => {
                                   onChange={(e) =>
                                     updateSet(exercise.id, set.setNumber, 'reps', parseInt(e.target.value) || 0)
                                   }
-                                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-center focus:outline-none focus:border-orange-400"
+                                  className="w-full bg-amber-950/30 border-2 border-amber-500/30 rounded-lg px-3 py-2 text-white text-center focus:outline-none focus:border-amber-400 focus:shadow-lg focus:shadow-amber-500/20 transition-all"
                                 />
                               </div>
                               <div>
@@ -444,15 +457,15 @@ const GymTracker: React.FC = () => {
                                   onChange={(e) =>
                                     updateSet(exercise.id, set.setNumber, 'weight', parseInt(e.target.value) || 0)
                                   }
-                                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-center focus:outline-none focus:border-orange-400"
+                                  className="w-full bg-amber-950/30 border-2 border-amber-500/30 rounded-lg px-3 py-2 text-white text-center focus:outline-none focus:border-amber-400 focus:shadow-lg focus:shadow-amber-500/20 transition-all"
                                 />
                               </div>
                               <button
                                 onClick={() => toggleSetComplete(exercise.id, set.setNumber)}
                                 className={`py-2 rounded-lg font-semibold text-sm transition-all ${
                                   set.completed
-                                    ? 'bg-green-500/30 text-green-300'
-                                    : 'bg-orange-500/20 text-orange-300 hover:bg-orange-500/30'
+                                    ? 'bg-green-500/30 text-green-300 border-2 border-green-400/50'
+                                    : 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border-2 border-amber-500/30 hover:border-amber-400/50 hover:shadow-lg hover:shadow-amber-500/20'
                                 }`}
                               >
                                 {set.completed ? '✓' : 'Done'}

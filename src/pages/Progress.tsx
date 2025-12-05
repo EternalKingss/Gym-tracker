@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { GlassCard } from '../components';
 import ProgressChart from '../components/ProgressChart';
 import { useAuth } from '../contexts/AuthContext';
-import { secureStorage } from '../utils/secureStorage';
+import { workoutService } from '../services/workoutService';
 
 interface WorkoutHistory {
   date: string;
@@ -49,15 +49,18 @@ const Progress: React.FC = () => {
   useEffect(() => {
     if (!user) return;
 
-    // Load user-specific workout history from secure storage
-    const key = `workoutHistory_${user.id}`;
-    const saved = secureStorage.getItem<WorkoutHistory[]>(key);
-    if (saved) {
-      setWorkoutHistory(saved);
-    } else {
-      // No workout history for this user yet
-      setWorkoutHistory([]);
-    }
+    // Load user-specific workout history from backend/storage
+    const loadHistory = async () => {
+      const saved = await workoutService.getWorkoutHistory(user.id);
+      if (saved) {
+        setWorkoutHistory(saved);
+      } else {
+        // No workout history for this user yet
+        setWorkoutHistory([]);
+      }
+    };
+
+    loadHistory();
   }, [user]);
 
   const generateSampleData = (): WorkoutHistory[] => {

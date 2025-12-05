@@ -1,18 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from '../components';
 import { useAuth } from '../contexts/AuthContext';
 
-type ViewMode = 'login' | 'signup' | 'forgot-password';
+type ViewMode = 'login' | 'signup' | 'forgot-password' | 'reset-password';
 
 const Auth: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' | 'warning' } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { login, signup, resetPassword } = useAuth();
+  const { login, signup, resetPassword, updatePassword } = useAuth();
+
+  // Check for password reset token in URL
+  useEffect(() => {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const type = hashParams.get('type');
+
+    if (type === 'recovery') {
+      setViewMode('reset-password');
+      showMessage('Enter your new password below', 'success');
+    }
+  }, []);
 
   const showMessage = (text: string, type: 'success' | 'error' | 'warning') => {
     setMessage({ text, type });
@@ -102,13 +114,48 @@ const Auth: React.FC = () => {
     }
   };
 
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (password.length < 6) {
+      showMessage('Password must be at least 6 characters', 'error');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      showMessage('Passwords do not match', 'error');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const result = await updatePassword(password);
+
+      if (result.success) {
+        showMessage('Password updated successfully! Redirecting to login...', 'success');
+        // Clear URL hash and go to login
+        window.location.hash = '';
+        setTimeout(() => setViewMode('login'), 2000);
+      } else {
+        showMessage(result.message, 'error');
+      }
+    } catch (error) {
+      showMessage('An unexpected error occurred', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     if (viewMode === 'login') {
       handleLogin(e);
     } else if (viewMode === 'signup') {
       handleSignup(e);
-    } else {
+    } else if (viewMode === 'forgot-password') {
       handleForgotPassword(e);
+    } else {
+      handleUpdatePassword(e);
     }
   };
 
@@ -169,7 +216,7 @@ const Auth: React.FC = () => {
         <GlassCard>
           <div className="space-y-6">
             {/* Tab Selector - Only show for login/signup */}
-            {viewMode !== 'forgot-password' && (
+            {viewMode !== 'forgot-password' && viewMode !== 'reset-password' && (
               <div className="flex gap-3">
                 <button
                   onClick={() => setViewMode('login')}
@@ -211,10 +258,16 @@ const Auth: React.FC = () => {
                 {viewMode === 'login' && 'Welcome Back'}
                 {viewMode === 'signup' && 'Create Account'}
                 {viewMode === 'forgot-password' && 'Reset Password'}
+                {viewMode === 'reset-password' && 'Set New Password'}
               </h3>
               {viewMode === 'forgot-password' && (
                 <p className="text-white/60 text-sm mt-2">
                   Enter your email and we'll send you a password reset link
+                </p>
+              )}
+              {viewMode === 'reset-password' && (
+                <p className="text-white/60 text-sm mt-2">
+                  Choose a strong password for your account
                 </p>
               )}
             </div>
@@ -235,34 +288,55 @@ const Auth: React.FC = () => {
                 </div>
               )}
 
-              <div>
-                <label className="text-white/80 text-sm block mb-2">Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-amber-950/30 border-2 border-amber-500/30 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-amber-400 focus:shadow-lg focus:shadow-amber-500/20 transition-all"
-                  placeholder="your@email.com"
-                  required
-                />
-              </div>
-
-              {viewMode !== 'forgot-password' && (
+              {viewMode !== 'reset-password' && (
                 <div>
-                  <label className="text-white/80 text-sm block mb-2">Password</label>
+                  <label className="text-white/80 text-sm block mb-2">Email</label>
                   <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="w-full bg-amber-950/30 border-2 border-amber-500/30 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-amber-400 focus:shadow-lg focus:shadow-amber-500/20 transition-all"
-                    placeholder="••••••••"
-                    minLength={6}
+                    placeholder="your@email.com"
                     required
                   />
-                  {viewMode === 'signup' && (
-                    <p className="text-white/50 text-xs mt-1">Minimum 6 characters</p>
-                  )}
                 </div>
+              )}
+
+              {viewMode !== 'forgot-password' && (
+                <>
+                  <div>
+                    <label className="text-white/80 text-sm block mb-2">
+                      {viewMode === 'reset-password' ? 'New Password' : 'Password'}
+                    </label>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full bg-amber-950/30 border-2 border-amber-500/30 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-amber-400 focus:shadow-lg focus:shadow-amber-500/20 transition-all"
+                      placeholder="••••••••"
+                      minLength={6}
+                      required
+                    />
+                    {(viewMode === 'signup' || viewMode === 'reset-password') && (
+                      <p className="text-white/50 text-xs mt-1">Minimum 6 characters</p>
+                    )}
+                  </div>
+
+                  {viewMode === 'reset-password' && (
+                    <div>
+                      <label className="text-white/80 text-sm block mb-2">Confirm Password</label>
+                      <input
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="w-full bg-amber-950/30 border-2 border-amber-500/30 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-amber-400 focus:shadow-lg focus:shadow-amber-500/20 transition-all"
+                        placeholder="••••••••"
+                        minLength={6}
+                        required
+                      />
+                    </div>
+                  )}
+                </>
               )}
 
               <button
@@ -284,6 +358,7 @@ const Auth: React.FC = () => {
                     {viewMode === 'login' && 'Login'}
                     {viewMode === 'signup' && 'Create Account'}
                     {viewMode === 'forgot-password' && 'Send Reset Link'}
+                    {viewMode === 'reset-password' && 'Update Password'}
                   </>
                 )}
               </button>

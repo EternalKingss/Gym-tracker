@@ -5,31 +5,31 @@ import { useAuth } from '../contexts/AuthContext';
 
 type ViewMode = 'login' | 'signup' | 'forgot-password' | 'reset-password';
 
-const Auth: React.FC = () => {
-  const [viewMode, setViewMode] = useState<ViewMode>('login');
+interface AuthProps {
+  isPasswordRecovery?: boolean;
+}
+
+const Auth: React.FC<AuthProps> = ({ isPasswordRecovery = false }) => {
+  const [viewMode, setViewMode] = useState<ViewMode>(isPasswordRecovery ? 'reset-password' : 'login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' | 'warning' } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { login, signup, resetPassword, updatePassword } = useAuth();
-
-  // Check for password reset token in URL
-  useEffect(() => {
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const type = hashParams.get('type');
-
-    if (type === 'recovery') {
-      setViewMode('reset-password');
-      showMessage('Enter your new password below', 'success');
-    }
-  }, []);
+  const { login, signup, resetPassword, updatePassword, logout } = useAuth();
 
   const showMessage = (text: string, type: 'success' | 'error' | 'warning') => {
     setMessage({ text, type });
     setTimeout(() => setMessage(null), 5000);
   };
+
+  // Show message on password recovery
+  useEffect(() => {
+    if (isPasswordRecovery) {
+      setMessage({ text: 'Enter your new password below', type: 'success' });
+    }
+  }, [isPasswordRecovery]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,16 +133,20 @@ const Auth: React.FC = () => {
       const result = await updatePassword(password);
 
       if (result.success) {
-        showMessage('Password updated successfully! Redirecting to login...', 'success');
-        // Clear URL hash and go to login
-        window.location.hash = '';
-        setTimeout(() => setViewMode('login'), 2000);
+        showMessage('Password updated successfully! Logging out...', 'success');
+
+        // Wait a moment to show the message, then logout and reload
+        setTimeout(() => {
+          logout();
+          // Completely reload the page to clear all state and URL hash
+          window.location.href = window.location.origin + window.location.pathname;
+        }, 1500);
       } else {
         showMessage(result.message, 'error');
+        setIsLoading(false);
       }
     } catch (error) {
       showMessage('An unexpected error occurred', 'error');
-    } finally {
       setIsLoading(false);
     }
   };

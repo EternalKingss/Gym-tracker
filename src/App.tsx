@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import GymTracker from './pages/GymTracker';
@@ -11,10 +11,20 @@ function AppContent() {
   const { user, logout, isLoading } = useAuth();
   const [currentPage, setCurrentPage] = useState<'workout' | 'progress' | 'program' | 'settings'>('program');
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
 
-  // Check for password recovery token in URL
-  const hashParams = new URLSearchParams(window.location.hash.substring(1));
-  const isPasswordRecovery = hashParams.get('type') === 'recovery';
+  // Check for password recovery token in URL on mount
+  useEffect(() => {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const recoveryType = hashParams.get('type');
+    console.log('URL Hash:', window.location.hash);
+    console.log('Recovery type:', recoveryType);
+
+    if (recoveryType === 'recovery') {
+      console.log('Password recovery detected!');
+      setIsPasswordRecovery(true);
+    }
+  }, []);
 
   if (isLoading) {
     return (
@@ -26,7 +36,7 @@ function AppContent() {
 
   // Show Auth page for password recovery even if user is logged in
   if (!user || isPasswordRecovery) {
-    return <Auth />;
+    return <Auth isPasswordRecovery={isPasswordRecovery} />;
   }
 
   return (

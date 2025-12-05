@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard, CircularProgress, Button } from '../components';
 import { useAuth } from '../contexts/AuthContext';
 import { WORKOUT_PROGRAM } from '../data/workoutProgram';
+import { secureStorage } from '../utils/secureStorage';
 
 interface ExerciseSet {
   setNumber: number;
@@ -52,21 +53,21 @@ const GymTracker: React.FC = () => {
     isActive: false,
   });
 
-  // Load progression from localStorage
+  // Load progression from secure storage
   useEffect(() => {
     if (!user) return;
     const key = `progression_${user.id}`;
-    const saved = localStorage.getItem(key);
+    const saved = secureStorage.getItem<WorkoutProgression>(key);
     if (saved) {
-      setProgression(JSON.parse(saved));
+      setProgression(saved);
     }
   }, [user]);
 
-  // Save progression to localStorage
+  // Save progression to secure storage
   const saveProgression = (newProgression: WorkoutProgression) => {
     if (!user) return;
     const key = `progression_${user.id}`;
-    localStorage.setItem(key, JSON.stringify(newProgression));
+    secureStorage.setItem(key, newProgression);
     setProgression(newProgression);
   };
 
@@ -135,9 +136,9 @@ const GymTracker: React.FC = () => {
 
     // Only save and update progression if exercises were completed
     if (completedExercises.length > 0) {
-      // Save workout to history
+      // Save workout to history using secure storage
       const historyKey = `workoutHistory_${user.id}`;
-      const existingHistory = JSON.parse(localStorage.getItem(historyKey) || '[]');
+      const existingHistory = secureStorage.getItem<any[]>(historyKey) || [];
 
       const newWorkout = {
         date: new Date().toISOString(),
@@ -154,7 +155,7 @@ const GymTracker: React.FC = () => {
       };
 
       const updatedHistory = [...existingHistory, newWorkout];
-      localStorage.setItem(historyKey, JSON.stringify(updatedHistory));
+      secureStorage.setItem(historyKey, updatedHistory);
 
       // Update progression
       let newProgression = { ...progression };

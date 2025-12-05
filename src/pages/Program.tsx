@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { GlassCard } from '../components';
 import { WORKOUT_PROGRAM, WARM_UP_PROTOCOL, WorkoutExercise } from '../data/workoutProgram';
 import { useAuth } from '../contexts/AuthContext';
+import { secureStorage } from '../utils/secureStorage';
 
 interface WorkoutProgression {
   currentWeek: number;
@@ -19,15 +20,14 @@ const Program: React.FC = () => {
   const [selectedDay, setSelectedDay] = useState(0);
   const [expandedExercise, setExpandedExercise] = useState<number | null>(null);
 
-  // Load progression from localStorage
+  // Load progression from secure storage
   useEffect(() => {
     if (!user) return;
     const key = `progression_${user.id}`;
-    const saved = localStorage.getItem(key);
+    const saved = secureStorage.getItem<WorkoutProgression>(key);
     if (saved) {
-      const loadedProgression = JSON.parse(saved);
-      setProgression(loadedProgression);
-      setSelectedWeek(loadedProgression.currentWeek);
+      setProgression(saved);
+      setSelectedWeek(saved.currentWeek);
     }
   }, [user]);
 

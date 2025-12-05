@@ -4,11 +4,12 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import GymTracker from './pages/GymTracker';
 import Progress from './pages/Progress';
 import Program from './pages/Program';
+import Settings from './pages/Settings';
 import Auth from './pages/Auth';
 
 function AppContent() {
   const { user, logout, isLoading } = useAuth();
-  const [currentPage, setCurrentPage] = useState<'workout' | 'progress' | 'program'>('program');
+  const [currentPage, setCurrentPage] = useState<'workout' | 'progress' | 'program' | 'settings'>('program');
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   if (isLoading) {
@@ -85,6 +86,15 @@ function AppContent() {
                   </div>
                   <button
                     onClick={() => {
+                      setCurrentPage('settings');
+                      setShowUserMenu(false);
+                    }}
+                    className="w-full px-4 py-3 text-left text-white hover:bg-white/10 transition-colors flex items-center gap-2"
+                  >
+                    ⚙️ Settings
+                  </button>
+                  <button
+                    onClick={() => {
                       logout();
                       setShowUserMenu(false);
                     }}
@@ -105,8 +115,10 @@ function AppContent() {
           <Program />
         ) : currentPage === 'workout' ? (
           <GymTracker />
-        ) : (
+        ) : currentPage === 'progress' ? (
           <Progress />
+        ) : (
+          <Settings />
         )}
       </div>
     </motion.div>

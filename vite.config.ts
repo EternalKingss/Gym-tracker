@@ -5,7 +5,7 @@ import path from 'path'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/Gym-tracker/', // GitHub Pages repository name
+  base: '/', // Use '/' for custom domain
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

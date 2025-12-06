@@ -29,8 +29,8 @@ const GlassCard: React.FC<GlassCardProps> = ({
         bg-gradient-to-br from-amber-950/40 via-black/30 to-orange-950/40
         border-2
         border-amber-500/30
-        rounded-3xl
-        p-6
+        rounded-2xl sm:rounded-3xl
+        p-4 sm:p-6
         transition-all
         duration-300
         hover:border-amber-400/50

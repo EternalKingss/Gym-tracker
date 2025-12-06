@@ -189,12 +189,12 @@ const Auth: React.FC<AuthProps> = ({ isPasswordRecovery = false }) => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative z-10 w-full max-w-md px-6"
+        className="relative z-10 w-full max-w-md px-4 sm:px-6"
       >
-        <div className="text-center mb-8">
-          <h1 className="text-white text-5xl font-bold mb-2">💪</h1>
-          <h2 className="text-white text-3xl font-bold">Gym Tracker</h2>
-          <p className="text-white/60 mt-2">Track your fitness journey</p>
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-white text-4xl sm:text-5xl font-bold mb-2">💪</h1>
+          <h2 className="text-white text-2xl sm:text-3xl font-bold">Gym Tracker</h2>
+          <p className="text-white/60 mt-2 text-sm sm:text-base">Track your fitness journey</p>
         </div>
 
         {/* Message Display */}
@@ -258,19 +258,19 @@ const Auth: React.FC<AuthProps> = ({ isPasswordRecovery = false }) => {
 
             {/* Form Title */}
             <div className="text-center">
-              <h3 className="text-white text-xl font-bold">
+              <h3 className="text-white text-lg sm:text-xl font-bold">
                 {viewMode === 'login' && 'Welcome Back'}
                 {viewMode === 'signup' && 'Create Account'}
                 {viewMode === 'forgot-password' && 'Reset Password'}
                 {viewMode === 'reset-password' && 'Set New Password'}
               </h3>
               {viewMode === 'forgot-password' && (
-                <p className="text-white/60 text-sm mt-2">
+                <p className="text-white/60 text-xs sm:text-sm mt-2">
                   Enter your email and we'll send you a password reset link
                 </p>
               )}
               {viewMode === 'reset-password' && (
-                <p className="text-white/60 text-sm mt-2">
+                <p className="text-white/60 text-xs sm:text-sm mt-2">
                   Choose a strong password for your account
                 </p>
               )}

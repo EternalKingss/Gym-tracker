@@ -43,15 +43,15 @@ function AppContent() {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
       {/* Navigation Bar */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-black/40 backdrop-blur-md border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <h1 className="text-white text-xl font-bold">💪 Gym Tracker</h1>
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+          <h1 className="text-white text-lg sm:text-xl font-bold">💪 Gym Tracker</h1>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             {/* Navigation Buttons */}
-            <div className="flex gap-3">
+            <div className="flex gap-1.5 sm:gap-3">
               <button
                 onClick={() => setCurrentPage('program')}
-                className={`px-6 py-2 rounded-full font-semibold transition-all ${
+                className={`px-3 sm:px-6 py-1.5 sm:py-2 rounded-full text-xs sm:text-base font-semibold transition-all ${
                   currentPage === 'program'
                     ? 'bg-orange-500 text-white'
                     : 'bg-white/10 text-white/60 hover:text-white hover:bg-white/20'
@@ -61,7 +61,7 @@ function AppContent() {
               </button>
               <button
                 onClick={() => setCurrentPage('workout')}
-                className={`px-6 py-2 rounded-full font-semibold transition-all ${
+                className={`px-3 sm:px-6 py-1.5 sm:py-2 rounded-full text-xs sm:text-base font-semibold transition-all ${
                   currentPage === 'workout'
                     ? 'bg-orange-500 text-white'
                     : 'bg-white/10 text-white/60 hover:text-white hover:bg-white/20'
@@ -71,7 +71,7 @@ function AppContent() {
               </button>
               <button
                 onClick={() => setCurrentPage('progress')}
-                className={`px-6 py-2 rounded-full font-semibold transition-all ${
+                className={`px-3 sm:px-6 py-1.5 sm:py-2 rounded-full text-xs sm:text-base font-semibold transition-all ${
                   currentPage === 'progress'
                     ? 'bg-orange-500 text-white'
                     : 'bg-white/10 text-white/60 hover:text-white hover:bg-white/20'
@@ -85,26 +85,26 @@ function AppContent() {
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full transition-colors"
+                className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-2 sm:px-4 py-1.5 sm:py-2 rounded-full transition-colors"
               >
-                <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-sm">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-xs sm:text-sm">
                   {user.name.charAt(0).toUpperCase()}
                 </div>
                 <span className="text-white text-sm font-medium hidden md:block">{user.name}</span>
               </button>
 
               {showUserMenu && (
-                <div className="absolute right-0 mt-2 w-64 bg-black/90 backdrop-blur-md border border-white/20 rounded-xl overflow-hidden shadow-xl">
-                  <div className="p-4 border-b border-white/10">
-                    <p className="text-white font-semibold">{user.name}</p>
-                    <p className="text-white/60 text-sm">{user.email}</p>
+                <div className="absolute right-0 mt-2 w-56 sm:w-64 bg-black/90 backdrop-blur-md border border-white/20 rounded-xl overflow-hidden shadow-xl">
+                  <div className="p-3 sm:p-4 border-b border-white/10">
+                    <p className="text-white font-semibold text-sm sm:text-base">{user.name}</p>
+                    <p className="text-white/60 text-xs sm:text-sm">{user.email}</p>
                   </div>
                   <button
                     onClick={() => {
                       setCurrentPage('settings');
                       setShowUserMenu(false);
                     }}
-                    className="w-full px-4 py-3 text-left text-white hover:bg-white/10 transition-colors flex items-center gap-2"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-left text-white hover:bg-white/10 transition-colors flex items-center gap-2 text-sm sm:text-base"
                   >
                     ⚙️ Settings
                   </button>
@@ -113,7 +113,7 @@ function AppContent() {
                       logout();
                       setShowUserMenu(false);
                     }}
-                    className="w-full px-4 py-3 text-left text-red-400 hover:bg-white/10 transition-colors"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-left text-red-400 hover:bg-white/10 transition-colors text-sm sm:text-base"
                   >
                     Logout
                   </button>
@@ -125,7 +125,7 @@ function AppContent() {
       </div>
 
       {/* Page Content */}
-      <div className="pt-20">
+      <div className="pt-16 sm:pt-20">
         {currentPage === 'program' ? (
           <Program />
         ) : currentPage === 'workout' ? (

@@ -71,12 +71,12 @@ const Program: React.FC = () => {
         />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-8 md:py-12 space-y-6">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 md:py-12 space-y-4 sm:space-y-6">
         {/* Header */}
         <motion.div initial="hidden" animate="visible" variants={cardVariants}>
-          <h1 className="text-white text-4xl font-bold mb-2">Jeff Nippard's Program</h1>
-          <p className="text-white/60">Bodybuilding Transformation System - Beginner</p>
-          <p className="text-orange-400 text-sm mt-2">
+          <h1 className="text-white text-2xl sm:text-3xl md:text-4xl font-bold mb-2">Jeff Nippard's Program</h1>
+          <p className="text-white/60 text-sm sm:text-base">Bodybuilding Transformation System - Beginner</p>
+          <p className="text-orange-400 text-xs sm:text-sm mt-2">
             {currentWeek?.block || 'Foundation Block'} • Week {selectedWeek}
           </p>
         </motion.div>
@@ -84,7 +84,7 @@ const Program: React.FC = () => {
         {/* Warm-Up Protocol */}
         <motion.div initial="hidden" animate="visible" variants={cardVariants} transition={{ delay: 0.1 }}>
           <GlassCard>
-            <h3 className="text-white text-xl font-bold mb-4">Warm-Up Protocol (5-10 mins)</h3>
+            <h3 className="text-white text-lg sm:text-xl font-bold mb-3 sm:mb-4">Warm-Up Protocol (5-10 mins)</h3>
 
             <div className="space-y-4">
               <div>
@@ -162,8 +162,8 @@ const Program: React.FC = () => {
         {/* Day Selector */}
         <motion.div initial="hidden" animate="visible" variants={cardVariants} transition={{ delay: 0.3 }}>
           <GlassCard>
-            <h3 className="text-white text-lg font-semibold mb-3">Select Workout Day</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <h3 className="text-white text-base sm:text-lg font-semibold mb-3">Select Workout Day</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-2 sm:gap-3">
               {currentWeek?.days.map((day, idx) => {
                 const isCompleted = selectedWeek === progression.currentWeek && progression.completedDays.includes(idx);
 

@@ -23,6 +23,8 @@ class WorkoutService {
    * Get user's workout progression
    */
   async getProgression(userId: string): Promise<WorkoutProgression> {
+    console.log('Loading progression for user:', userId);
+
     // Try to get from backend first
     if (supabase) {
       try {
@@ -34,7 +36,7 @@ class WorkoutService {
 
         if (error && error.code !== 'PGRST116') {
           // PGRST116 = no rows returned
-          console.error('Error fetching progression:', error);
+          console.error('❌ Error fetching progression from Supabase:', error);
         }
 
         if (data) {
@@ -43,18 +45,27 @@ class WorkoutService {
             completedDays: data.completed_days || [],
           };
 
+          console.log('✅ Progression loaded from Supabase:', progression);
+
           // Sync to localStorage as backup
           secureStorage.setItem(`progression_${userId}`, progression);
 
           return progression;
+        } else {
+          console.log('⚠️ No progression found in Supabase, checking localStorage');
         }
       } catch (error) {
-        console.error('Error fetching progression from backend:', error);
+        console.error('❌ Exception fetching progression from backend:', error);
       }
     }
 
     // Fallback to localStorage
     const localProgression = secureStorage.getItem<WorkoutProgression>(`progression_${userId}`);
+    if (localProgression) {
+      console.log('✅ Progression loaded from localStorage:', localProgression);
+    } else {
+      console.log('ℹ️ No progression found, using default');
+    }
     return localProgression || { currentWeek: 1, completedDays: [] };
   }
 
@@ -62,26 +73,36 @@ class WorkoutService {
    * Update user's workout progression
    */
   async updateProgression(userId: string, progression: WorkoutProgression): Promise<void> {
+    console.log('Updating progression for user:', userId, progression);
+
     // Save to localStorage first (immediate)
     secureStorage.setItem(`progression_${userId}`, progression);
+    console.log('Progression saved to localStorage');
 
     // Sync to backend
     if (supabase) {
       try {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('user_progression')
           .upsert({
             user_id: userId,
             current_week: progression.currentWeek,
             completed_days: progression.completedDays,
             updated_at: new Date().toISOString(),
-          });
+          }, {
+            onConflict: 'user_id'
+          })
+          .select();
 
         if (error) {
-          console.error('Error updating progression in backend:', error);
+          console.error('❌ Error updating progression in Supabase:', error);
+          alert(`Failed to save progress to cloud: ${error.message}. Data saved locally only.`);
+        } else {
+          console.log('✅ Progression saved to Supabase successfully:', data);
         }
       } catch (error) {
-        console.error('Error syncing progression to backend:', error);
+        console.error('❌ Exception syncing progression to backend:', error);
+        alert('Failed to save progress to cloud. Data saved locally only.');
       }
     }
   }

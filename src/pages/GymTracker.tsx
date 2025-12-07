@@ -136,9 +136,10 @@ const GymTracker: React.FC = () => {
 
     const { week, day, exercises, startTime } = workoutSession;
     const completedExercises = exercises.filter(ex => ex.completed);
+    const allExercisesCompleted = exercises.length > 0 && exercises.every(ex => ex.completed);
 
-    // Only save and update progression if exercises were completed
-    if (completedExercises.length > 0 && startTime) {
+    // Only save and update progression if ALL exercises were completed
+    if (allExercisesCompleted && startTime) {
       // Save workout session to backend/storage
       const exercisesData = completedExercises.map(ex => {
         const completedSets = ex.sets.filter(s => s.completed);
@@ -381,9 +382,18 @@ const GymTracker: React.FC = () => {
                   )}
                 </div>
                 {workoutSession.isActive ? (
-                  <Button variant="secondary" onClick={endWorkout}>
-                    End Workout
-                  </Button>
+                  <div className="flex flex-col items-end gap-2">
+                    <Button
+                      variant="secondary"
+                      onClick={endWorkout}
+                      disabled={workoutSession.exercises.length === 0 || !workoutSession.exercises.every(ex => ex.completed)}
+                    >
+                      End Workout
+                    </Button>
+                    {workoutSession.exercises.length > 0 && !workoutSession.exercises.every(ex => ex.completed) && (
+                      <p className="text-amber-400 text-xs">Complete all exercises to finish workout</p>
+                    )}
+                  </div>
                 ) : (
                   <Button variant="primary" onClick={startWorkout}>
                     Start Workout

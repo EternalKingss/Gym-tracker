@@ -105,17 +105,17 @@ const GymTracker: React.FC = () => {
   };
 
   // Start workout with auto-populated exercises
-  const startWorkout = () => {
+  const startWorkout = (skipWeightChecks = false) => {
     const { week, day } = getNextWorkoutDay();
 
     // Check if we need initial weight/goal (ask on ANY workout if not set)
-    if (weightTracking.initialWeight === null) {
+    if (!skipWeightChecks && weightTracking.initialWeight === null) {
       setShowInitialWeightModal(true);
       return;
     }
 
     // Check if we need a weight check-in (every 4 weeks)
-    if (workoutService.needsWeightCheckIn(weightTracking, week)) {
+    if (!skipWeightChecks && workoutService.needsWeightCheckIn(weightTracking, week)) {
       setShowWeightCheckInModal(true);
       return;
     }
@@ -177,8 +177,8 @@ const GymTracker: React.FC = () => {
     setTempInitialWeight('');
     setTempGoalWeight('');
 
-    // Now actually start the workout
-    startWorkout();
+    // Now actually start the workout (skip weight checks since we just completed them)
+    startWorkout(true);
   };
 
   // Handle weight check-in submission
@@ -200,8 +200,8 @@ const GymTracker: React.FC = () => {
     setShowWeightCheckInModal(false);
     setTempCurrentWeight('');
 
-    // Now actually start the workout
-    startWorkout();
+    // Now actually start the workout (skip weight checks since we just completed them)
+    startWorkout(true);
   };
 
   // End workout and update progression
@@ -618,10 +618,22 @@ const GymTracker: React.FC = () => {
               className="w-full max-w-md"
             >
               <GlassCard>
-                <h3 className="text-white text-xl font-bold mb-4">Set Your Weight Goals</h3>
-                <p className="text-white/60 text-sm mb-6">
-                  Before starting your first workout, let's track your progress toward your goals.
-                </p>
+                <div className="relative">
+                  <button
+                    onClick={() => {
+                      setShowInitialWeightModal(false);
+                      setTempInitialWeight('');
+                      setTempGoalWeight('');
+                    }}
+                    className="absolute -top-2 -right-2 w-8 h-8 bg-red-500/80 hover:bg-red-500 rounded-full flex items-center justify-center text-white font-bold transition-all hover:scale-110"
+                  >
+                    ×
+                  </button>
+                  <h3 className="text-white text-xl font-bold mb-4">Set Your Weight Goals</h3>
+                  <p className="text-white/60 text-sm mb-6">
+                    Before starting your first workout, let's track your progress toward your goals.
+                  </p>
+                </div>
 
                 <div className="space-y-4">
                   <div>
@@ -675,10 +687,21 @@ const GymTracker: React.FC = () => {
               className="w-full max-w-md"
             >
               <GlassCard>
-                <h3 className="text-white text-xl font-bold mb-4">Weight Check-In</h3>
-                <p className="text-white/60 text-sm mb-6">
-                  It's been 4 weeks! Let's track your progress.
-                </p>
+                <div className="relative">
+                  <button
+                    onClick={() => {
+                      setShowWeightCheckInModal(false);
+                      setTempCurrentWeight('');
+                    }}
+                    className="absolute -top-2 -right-2 w-8 h-8 bg-red-500/80 hover:bg-red-500 rounded-full flex items-center justify-center text-white font-bold transition-all hover:scale-110"
+                  >
+                    ×
+                  </button>
+                  <h3 className="text-white text-xl font-bold mb-4">Weight Check-In</h3>
+                  <p className="text-white/60 text-sm mb-6">
+                    It's been 4 weeks! Let's track your progress.
+                  </p>
+                </div>
 
                 {weightTracking.initialWeight && weightTracking.goalWeight && (
                   <div className="bg-amber-950/30 rounded-xl p-4 mb-6 space-y-2">

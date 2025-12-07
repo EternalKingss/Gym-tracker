@@ -108,8 +108,8 @@ const GymTracker: React.FC = () => {
   const startWorkout = () => {
     const { week, day } = getNextWorkoutDay();
 
-    // Check if this is the first workout and we need initial weight/goal
-    if (week === 1 && day === 0 && weightTracking.initialWeight === null) {
+    // Check if we need initial weight/goal (ask on ANY workout if not set)
+    if (weightTracking.initialWeight === null) {
       setShowInitialWeightModal(true);
       return;
     }

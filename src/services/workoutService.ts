@@ -18,6 +18,19 @@ export interface WorkoutHistory {
   }[];
 }
 
+// Weight tracking interfaces
+export interface WeightCheckIn {
+  week: number;
+  weight: number;
+  date: string;
+}
+
+export interface WeightTracking {
+  initialWeight: number | null;
+  goalWeight: number | null;
+  checkIns: WeightCheckIn[];
+}
+
 class WorkoutService {
   /**
    * Get user's workout progression
@@ -237,6 +250,93 @@ class WorkoutService {
     } catch (error) {
       console.error('Error importing data from backend:', error);
     }
+  }
+
+  /**
+   * Get user's weight tracking data
+   */
+  async getWeightTracking(userId: string): Promise<WeightTracking> {
+    console.log('Loading weight tracking for user:', userId);
+
+    // Try localStorage first (faster)
+    const localWeight = secureStorage.getItem<WeightTracking>(`weightTracking_${userId}`);
+    if (localWeight) {
+      console.log('✅ Weight tracking loaded from localStorage:', localWeight);
+      return localWeight;
+    }
+
+    // Default empty weight tracking
+    const defaultTracking: WeightTracking = {
+      initialWeight: null,
+      goalWeight: null,
+      checkIns: [],
+    };
+
+    console.log('ℹ️ No weight tracking found, using default');
+    return defaultTracking;
+  }
+
+  /**
+   * Update user's weight tracking data
+   */
+  async updateWeightTracking(userId: string, weightTracking: WeightTracking): Promise<void> {
+    console.log('Updating weight tracking for user:', userId, weightTracking);
+
+    // Save to localStorage
+    secureStorage.setItem(`weightTracking_${userId}`, weightTracking);
+    console.log('✅ Weight tracking saved to localStorage');
+  }
+
+  /**
+   * Set initial weight and goal weight (called on first workout)
+   */
+  async setInitialWeightGoal(userId: string, initialWeight: number, goalWeight: number): Promise<void> {
+    const tracking = await this.getWeightTracking(userId);
+    tracking.initialWeight = initialWeight;
+    tracking.goalWeight = goalWeight;
+    tracking.checkIns = [{
+      week: 1,
+      weight: initialWeight,
+      date: new Date().toISOString(),
+    }];
+
+    await this.updateWeightTracking(userId, tracking);
+    console.log('✅ Initial weight and goal set:', { initialWeight, goalWeight });
+  }
+
+  /**
+   * Add a weight check-in for a specific week
+   */
+  async addWeightCheckIn(userId: string, week: number, weight: number): Promise<void> {
+    const tracking = await this.getWeightTracking(userId);
+
+    // Remove existing check-in for this week if it exists
+    tracking.checkIns = tracking.checkIns.filter(c => c.week !== week);
+
+    // Add new check-in
+    tracking.checkIns.push({
+      week,
+      weight,
+      date: new Date().toISOString(),
+    });
+
+    // Sort by week
+    tracking.checkIns.sort((a, b) => a.week - b.week);
+
+    await this.updateWeightTracking(userId, tracking);
+    console.log('✅ Weight check-in added for week', week, ':', weight);
+  }
+
+  /**
+   * Check if user needs to do a weight check-in for current week
+   */
+  needsWeightCheckIn(weightTracking: WeightTracking, currentWeek: number): boolean {
+    // Need check-in every 4 weeks (week 4, 8, 12, etc.)
+    if (currentWeek % 4 !== 0) return false;
+
+    // Check if already have a check-in for this week
+    const hasCheckIn = weightTracking.checkIns.some(c => c.week === currentWeek);
+    return !hasCheckIn;
   }
 }
 

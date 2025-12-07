@@ -74,7 +74,7 @@ const Program: React.FC = () => {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 md:py-12 space-y-4 sm:space-y-6">
         {/* Header */}
         <motion.div initial="hidden" animate="visible" variants={cardVariants}>
-          <h1 className="text-white text-2xl sm:text-3xl md:text-4xl font-bold mb-2">Jeff Nippard's Program</h1>
+          <h1 className="text-white text-2xl sm:text-3xl md:text-4xl font-bold mb-2">Training Program</h1>
           <p className="text-white/60 text-sm sm:text-base">Bodybuilding Transformation System - Beginner</p>
           <p className="text-orange-400 text-xs sm:text-sm mt-2">
             {currentWeek?.block || 'Foundation Block'} • Week {selectedWeek}

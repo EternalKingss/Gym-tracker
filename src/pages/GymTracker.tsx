@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard, CircularProgress, Button } from '../components';
 import { useAuth } from '../contexts/AuthContext';
 import { WORKOUT_PROGRAM } from '../data/workoutProgram';
-import { workoutService } from '../services/workoutService';
+import { workoutService, WeightTracking } from '../services/workoutService';
 
 interface ExerciseSet {
   setNumber: number;
@@ -53,18 +53,33 @@ const GymTracker: React.FC = () => {
     isActive: false,
   });
 
-  // Load progression from backend/storage
+  const [weightTracking, setWeightTracking] = useState<WeightTracking>({
+    initialWeight: null,
+    goalWeight: null,
+    checkIns: [],
+  });
+
+  const [showInitialWeightModal, setShowInitialWeightModal] = useState(false);
+  const [showWeightCheckInModal, setShowWeightCheckInModal] = useState(false);
+  const [tempInitialWeight, setTempInitialWeight] = useState('');
+  const [tempGoalWeight, setTempGoalWeight] = useState('');
+  const [tempCurrentWeight, setTempCurrentWeight] = useState('');
+
+  // Load progression and weight tracking from backend/storage
   useEffect(() => {
     if (!user) return;
 
-    const loadProgression = async () => {
+    const loadData = async () => {
       const saved = await workoutService.getProgression(user.id);
       if (saved) {
         setProgression(saved);
       }
+
+      const weight = await workoutService.getWeightTracking(user.id);
+      setWeightTracking(weight);
     };
 
-    loadProgression();
+    loadData();
   }, [user]);
 
   // Save progression to backend/storage
@@ -92,6 +107,18 @@ const GymTracker: React.FC = () => {
   // Start workout with auto-populated exercises
   const startWorkout = () => {
     const { week, day } = getNextWorkoutDay();
+
+    // Check if this is the first workout and we need initial weight/goal
+    if (week === 1 && day === 0 && weightTracking.initialWeight === null) {
+      setShowInitialWeightModal(true);
+      return;
+    }
+
+    // Check if we need a weight check-in (every 4 weeks)
+    if (workoutService.needsWeightCheckIn(weightTracking, week)) {
+      setShowWeightCheckInModal(true);
+      return;
+    }
 
     // Check if week exists in program
     const weekData = WORKOUT_PROGRAM.find(w => w.week === week);
@@ -128,6 +155,53 @@ const GymTracker: React.FC = () => {
       startTime: new Date(),
       isActive: true,
     });
+  };
+
+  // Handle initial weight and goal submission
+  const handleInitialWeightSubmit = async () => {
+    if (!user) return;
+
+    const initial = parseFloat(tempInitialWeight);
+    const goal = parseFloat(tempGoalWeight);
+
+    if (isNaN(initial) || isNaN(goal) || initial <= 0 || goal <= 0) {
+      alert('Please enter valid weight values');
+      return;
+    }
+
+    await workoutService.setInitialWeightGoal(user.id, initial, goal);
+    const updated = await workoutService.getWeightTracking(user.id);
+    setWeightTracking(updated);
+
+    setShowInitialWeightModal(false);
+    setTempInitialWeight('');
+    setTempGoalWeight('');
+
+    // Now actually start the workout
+    startWorkout();
+  };
+
+  // Handle weight check-in submission
+  const handleWeightCheckInSubmit = async () => {
+    if (!user) return;
+
+    const current = parseFloat(tempCurrentWeight);
+
+    if (isNaN(current) || current <= 0) {
+      alert('Please enter a valid weight value');
+      return;
+    }
+
+    const { week } = getNextWorkoutDay();
+    await workoutService.addWeightCheckIn(user.id, week, current);
+    const updated = await workoutService.getWeightTracking(user.id);
+    setWeightTracking(updated);
+
+    setShowWeightCheckInModal(false);
+    setTempCurrentWeight('');
+
+    // Now actually start the workout
+    startWorkout();
   };
 
   // End workout and update progression

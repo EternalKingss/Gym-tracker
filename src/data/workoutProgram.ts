@@ -1,4 +1,4 @@
-// Jeff Nippard's Bodybuilding Transformation System - Beginner
+// Bodybuilding Transformation System - Beginner
 // Foundation Block (Weeks 1-4)
 
 export interface WorkoutExercise {

@@ -15,7 +15,7 @@ interface WorkoutHistory {
   }[];
 }
 
-// Jeff Nippard's Bodybuilding Transformation System - Beginner Exercises
+// Tracked exercises from training program
 const TRACKED_EXERCISES = [
   '45° Incline Barbell Press',
   'Cable Crossover',

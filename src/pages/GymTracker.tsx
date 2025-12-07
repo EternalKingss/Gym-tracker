@@ -394,9 +394,9 @@ const GymTracker: React.FC = () => {
           {/* Current Session */}
           <motion.div variants={cardVariants}>
             <GlassCard className="h-full">
-              <div className="text-center space-y-2">
+              <div className="text-center space-y-3">
                 <h3 className="text-white/60 text-sm">Current Session</h3>
-                <div className="py-4">
+                <div className="py-2">
                   {workoutSession.isActive ? (
                     <div className="space-y-2">
                       <p className="text-amber-400 text-2xl font-bold">
@@ -408,6 +408,25 @@ const GymTracker: React.FC = () => {
                     <p className="text-white/40 text-sm">Not started</p>
                   )}
                 </div>
+
+                {/* Weight Tracking Info */}
+                {weightTracking.initialWeight && weightTracking.goalWeight && (
+                  <div className="border-t border-white/10 pt-3 space-y-2">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-white/50">Current:</span>
+                      <span className="text-white font-semibold">
+                        {weightTracking.checkIns.length > 0
+                          ? weightTracking.checkIns[weightTracking.checkIns.length - 1].weight
+                          : weightTracking.initialWeight}{' '}
+                        lbs
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-white/50">Goal:</span>
+                      <span className="text-amber-400 font-semibold">{weightTracking.goalWeight} lbs</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </GlassCard>
           </motion.div>
@@ -582,6 +601,121 @@ const GymTracker: React.FC = () => {
           </GlassCard>
         </motion.div>
       </motion.div>
+
+      {/* Initial Weight and Goal Modal */}
+      <AnimatePresence>
+        {showInitialWeightModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="w-full max-w-md"
+            >
+              <GlassCard>
+                <h3 className="text-white text-xl font-bold mb-4">Set Your Weight Goals</h3>
+                <p className="text-white/60 text-sm mb-6">
+                  Before starting your first workout, let's track your progress toward your goals.
+                </p>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-white/80 text-sm block mb-2">Current Weight (lbs)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={tempInitialWeight}
+                      onChange={(e) => setTempInitialWeight(e.target.value)}
+                      className="w-full bg-amber-950/30 border-2 border-amber-500/30 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-amber-400 transition-all"
+                      placeholder="Enter your current weight"
+                      autoFocus
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-white/80 text-sm block mb-2">Goal Weight (lbs)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={tempGoalWeight}
+                      onChange={(e) => setTempGoalWeight(e.target.value)}
+                      className="w-full bg-amber-950/30 border-2 border-amber-500/30 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-amber-400 transition-all"
+                      placeholder="Enter your goal weight"
+                    />
+                  </div>
+
+                  <Button variant="primary" onClick={handleInitialWeightSubmit} className="w-full mt-6">
+                    Start Workout
+                  </Button>
+                </div>
+              </GlassCard>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Weight Check-In Modal (Every 4 Weeks) */}
+      <AnimatePresence>
+        {showWeightCheckInModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="w-full max-w-md"
+            >
+              <GlassCard>
+                <h3 className="text-white text-xl font-bold mb-4">Weight Check-In</h3>
+                <p className="text-white/60 text-sm mb-6">
+                  It's been 4 weeks! Let's track your progress.
+                </p>
+
+                {weightTracking.initialWeight && weightTracking.goalWeight && (
+                  <div className="bg-amber-950/30 rounded-xl p-4 mb-6 space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-white/60">Starting Weight:</span>
+                      <span className="text-white font-semibold">{weightTracking.initialWeight} lbs</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-white/60">Goal Weight:</span>
+                      <span className="text-amber-400 font-semibold">{weightTracking.goalWeight} lbs</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-white/80 text-sm block mb-2">Current Weight (lbs)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={tempCurrentWeight}
+                      onChange={(e) => setTempCurrentWeight(e.target.value)}
+                      className="w-full bg-amber-950/30 border-2 border-amber-500/30 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-amber-400 transition-all"
+                      placeholder="Enter your current weight"
+                      autoFocus
+                    />
+                  </div>
+
+                  <Button variant="primary" onClick={handleWeightCheckInSubmit} className="w-full mt-6">
+                    Continue to Workout
+                  </Button>
+                </div>
+              </GlassCard>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

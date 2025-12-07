@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { GlassCard } from '../components';
 import ProgressChart from '../components/ProgressChart';
 import { useAuth } from '../contexts/AuthContext';
-import { workoutService } from '../services/workoutService';
+import { workoutService, WeightTracking } from '../services/workoutService';
 
 interface WorkoutHistory {
   date: string;
@@ -45,12 +45,17 @@ const Progress: React.FC = () => {
   const { user } = useAuth();
   const [workoutHistory, setWorkoutHistory] = useState<WorkoutHistory[]>([]);
   const [selectedExercise, setSelectedExercise] = useState('45° Incline Barbell Press');
+  const [weightTracking, setWeightTracking] = useState<WeightTracking>({
+    initialWeight: null,
+    goalWeight: null,
+    checkIns: [],
+  });
 
   useEffect(() => {
     if (!user) return;
 
-    // Load user-specific workout history from backend/storage
-    const loadHistory = async () => {
+    // Load user-specific workout history and weight tracking from backend/storage
+    const loadData = async () => {
       const saved = await workoutService.getWorkoutHistory(user.id);
       if (saved) {
         setWorkoutHistory(saved);
@@ -58,9 +63,12 @@ const Progress: React.FC = () => {
         // No workout history for this user yet
         setWorkoutHistory([]);
       }
+
+      const weight = await workoutService.getWeightTracking(user.id);
+      setWeightTracking(weight);
     };
 
-    loadHistory();
+    loadData();
   }, [user]);
 
   const generateSampleData = (): WorkoutHistory[] => {
@@ -144,8 +152,85 @@ const Progress: React.FC = () => {
           className="mb-6"
         >
           <h1 className="text-white text-4xl font-bold mb-2">Progress Tracker</h1>
-          <p className="text-white/60">Track your strength gains over time</p>
+          <p className="text-white/60">Track your strength gains and body weight over time</p>
         </motion.div>
+
+        {/* Weight Progress Card */}
+        {weightTracking.initialWeight && weightTracking.goalWeight && (
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={cardVariants}
+            className="mb-6"
+          >
+            <GlassCard>
+              <h3 className="text-white text-lg font-semibold mb-4">Weight Progress</h3>
+
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="text-center">
+                  <p className="text-white/60 text-xs mb-1">Starting</p>
+                  <p className="text-white text-xl font-bold">{weightTracking.initialWeight} lbs</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-white/60 text-xs mb-1">Current</p>
+                  <p className="text-amber-400 text-xl font-bold">
+                    {weightTracking.checkIns.length > 0
+                      ? weightTracking.checkIns[weightTracking.checkIns.length - 1].weight
+                      : weightTracking.initialWeight}{' '}
+                    lbs
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-white/60 text-xs mb-1">Goal</p>
+                  <p className="text-green-400 text-xl font-bold">{weightTracking.goalWeight} lbs</p>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              {(() => {
+                const currentWeight =
+                  weightTracking.checkIns.length > 0
+                    ? weightTracking.checkIns[weightTracking.checkIns.length - 1].weight
+                    : weightTracking.initialWeight;
+                const totalChange = Math.abs(weightTracking.goalWeight - weightTracking.initialWeight);
+                const currentChange = Math.abs(currentWeight - weightTracking.initialWeight);
+                const progressPercent = totalChange > 0 ? Math.min((currentChange / totalChange) * 100, 100) : 0;
+                const isGainingWeight = weightTracking.goalWeight > weightTracking.initialWeight;
+                const isOnTrack = isGainingWeight
+                  ? currentWeight >= weightTracking.initialWeight
+                  : currentWeight <= weightTracking.initialWeight;
+
+                return (
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-white/60 text-sm">Progress to Goal</span>
+                      <span className="text-white text-sm font-semibold">
+                        {progressPercent.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-white/10 rounded-full h-4 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${
+                          isOnTrack ? 'bg-gradient-to-r from-amber-500 to-green-500' : 'bg-gradient-to-r from-red-500 to-orange-500'
+                        }`}
+                        style={{ width: `${progressPercent}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between items-center mt-2">
+                      <span className={`text-xs ${isOnTrack ? 'text-green-400' : 'text-red-400'}`}>
+                        {currentWeight - weightTracking.initialWeight > 0 ? '+' : ''}
+                        {(currentWeight - weightTracking.initialWeight).toFixed(1)} lbs
+                      </span>
+                      <span className="text-white/60 text-xs">
+                        {Math.abs(weightTracking.goalWeight - currentWeight).toFixed(1)} lbs to goal
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
+            </GlassCard>
+          </motion.div>
+        )}
 
         {/* Exercise Selector */}
         <motion.div

@@ -64,6 +64,7 @@ const GymTracker: React.FC = () => {
   const [tempInitialWeight, setTempInitialWeight] = useState('');
   const [tempGoalWeight, setTempGoalWeight] = useState('');
   const [tempCurrentWeight, setTempCurrentWeight] = useState('');
+  const [hasLoadedSession, setHasLoadedSession] = useState(false);
 
   // Load progression and weight tracking from backend/storage
   useEffect(() => {
@@ -96,6 +97,9 @@ const GymTracker: React.FC = () => {
           sessionStorage.removeItem(sessionKey);
         }
       }
+
+      // Mark that we've loaded the session
+      setHasLoadedSession(true);
     };
 
     loadData();
@@ -103,7 +107,7 @@ const GymTracker: React.FC = () => {
 
   // Save active workout session to sessionStorage whenever it changes
   useEffect(() => {
-    if (!user) return;
+    if (!user || !hasLoadedSession) return; // Don't run until we've loaded
 
     const sessionKey = `workout_session_${user.id}`;
 
@@ -120,11 +124,11 @@ const GymTracker: React.FC = () => {
         console.error('❌ Failed to save workout session:', error);
       }
     } else if (!workoutSession.isActive && workoutSession.exercises.length === 0) {
-      // Clear session when workout is not active
+      // Clear session when workout is not active (only after initial load)
       console.log('🗑️ Clearing workout session from sessionStorage');
       sessionStorage.removeItem(sessionKey);
     }
-  }, [workoutSession, user]);
+  }, [workoutSession, user, hasLoadedSession]);
 
   // Save progression to backend/storage
   const saveProgression = async (newProgression: WorkoutProgression) => {

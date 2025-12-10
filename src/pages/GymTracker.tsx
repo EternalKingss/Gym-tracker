@@ -81,16 +81,18 @@ const GymTracker: React.FC = () => {
       // Restore active workout session from sessionStorage if exists
       const sessionKey = `workout_session_${user.id}`;
       const savedSession = sessionStorage.getItem(sessionKey);
+      console.log('🔄 Checking for saved session...', savedSession ? 'Found!' : 'None');
       if (savedSession) {
         try {
           const parsed = JSON.parse(savedSession);
+          console.log('✅ Restoring workout session:', parsed);
           // Convert startTime back to Date object
           if (parsed.startTime) {
             parsed.startTime = new Date(parsed.startTime);
           }
           setWorkoutSession(parsed);
         } catch (error) {
-          console.error('Failed to restore workout session:', error);
+          console.error('❌ Failed to restore workout session:', error);
           sessionStorage.removeItem(sessionKey);
         }
       }
@@ -109,11 +111,17 @@ const GymTracker: React.FC = () => {
       // Save active session
       try {
         sessionStorage.setItem(sessionKey, JSON.stringify(workoutSession));
+        console.log('💾 Saved workout session to sessionStorage', {
+          week: workoutSession.week,
+          day: workoutSession.day,
+          exerciseCount: workoutSession.exercises.length,
+        });
       } catch (error) {
-        console.error('Failed to save workout session:', error);
+        console.error('❌ Failed to save workout session:', error);
       }
     } else if (!workoutSession.isActive && workoutSession.exercises.length === 0) {
       // Clear session when workout is not active
+      console.log('🗑️ Clearing workout session from sessionStorage');
       sessionStorage.removeItem(sessionKey);
     }
   }, [workoutSession, user]);

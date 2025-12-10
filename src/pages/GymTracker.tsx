@@ -77,10 +77,46 @@ const GymTracker: React.FC = () => {
 
       const weight = await workoutService.getWeightTracking(user.id);
       setWeightTracking(weight);
+
+      // Restore active workout session from sessionStorage if exists
+      const sessionKey = `workout_session_${user.id}`;
+      const savedSession = sessionStorage.getItem(sessionKey);
+      if (savedSession) {
+        try {
+          const parsed = JSON.parse(savedSession);
+          // Convert startTime back to Date object
+          if (parsed.startTime) {
+            parsed.startTime = new Date(parsed.startTime);
+          }
+          setWorkoutSession(parsed);
+        } catch (error) {
+          console.error('Failed to restore workout session:', error);
+          sessionStorage.removeItem(sessionKey);
+        }
+      }
     };
 
     loadData();
   }, [user]);
+
+  // Save active workout session to sessionStorage whenever it changes
+  useEffect(() => {
+    if (!user) return;
+
+    const sessionKey = `workout_session_${user.id}`;
+
+    if (workoutSession.isActive) {
+      // Save active session
+      try {
+        sessionStorage.setItem(sessionKey, JSON.stringify(workoutSession));
+      } catch (error) {
+        console.error('Failed to save workout session:', error);
+      }
+    } else if (!workoutSession.isActive && workoutSession.exercises.length === 0) {
+      // Clear session when workout is not active
+      sessionStorage.removeItem(sessionKey);
+    }
+  }, [workoutSession, user]);
 
   // Save progression to backend/storage
   const saveProgression = async (newProgression: WorkoutProgression) => {

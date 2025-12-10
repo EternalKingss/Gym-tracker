@@ -272,14 +272,14 @@ const Program: React.FC = () => {
                         {(exercise.substitution1 || exercise.substitution2) && (
                           <div>
                             <p className="text-white/60 text-xs mb-2">Alternative Exercises:</p>
-                            <div className="flex gap-2">
+                            <div className="flex flex-col sm:flex-row gap-2">
                               {exercise.substitution1 && (
-                                <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg px-3 py-2 flex-1">
+                                <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg px-3 py-2 sm:flex-1">
                                   <p className="text-blue-300 text-sm">{exercise.substitution1}</p>
                                 </div>
                               )}
                               {exercise.substitution2 && (
-                                <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg px-3 py-2 flex-1">
+                                <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg px-3 py-2 sm:flex-1">
                                   <p className="text-blue-300 text-sm">{exercise.substitution2}</p>
                                 </div>
                               )}
